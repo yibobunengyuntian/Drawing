@@ -1,0 +1,58 @@
+QScrollArea {
+    background: transparent;
+    border: none;
+}
+
+QPushButton {
+    background-color: white;
+    border: none;
+    color: black;
+    font-size: 16px;
+    border-radius: 4px;
+}
+
+QPushButton:hover {
+    background-color: #f0f0f0;
+    border: 1px solid black;
+}
+
+QPushButton:pressed {
+    background-color: #f3f3f3;
+    border: 1px solid black;
+}
+
+QPushButton:checked
+{
+    background-color: #f3f3f3;
+    border: 2px solid #003e92;
+}
+
+QPushButton:disabled {
+    background-color: white;
+    color: #666666;
+}
+
+QSlider::groove:horizontal {
+	border: 0px;
+	height: 2px;
+	background: #CCCCCC;
+	margin: 2px 0;
+	border-radius: 1px;
+}
+
+QSlider::handle:horizontal {
+	background: #000000;
+	border: 0px;
+	width: 12px;
+	height: 12px;
+	margin: -5px 0;
+	border-radius: 6px;
+}
+
+QSlider::sub-page:horizontal {
+	border: 0px;
+	height: 2px;
+	background: #000000;
+	margin: 2px 0;
+	border-radius: 1px;
+}
