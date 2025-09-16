@@ -13,6 +13,7 @@ HEADERS += \
     $$PWD/shapetriangleitem.h
 
 SOURCES += \
+    $$PWD/shapebaseitem.cpp \
     $$PWD/shapecorveitem.cpp \
     $$PWD/shapeellipseitem.cpp \
     $$PWD/shapelineitem.cpp \

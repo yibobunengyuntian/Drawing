@@ -8,8 +8,7 @@
 #include <QUndoCommand>
 #include <QUndoStack>
 #include <QApplication>
-
-#include <queue>
+#include <QQueue>
 
 #include "shapebaseitem.h"
 
@@ -18,32 +17,44 @@ class Canvas: public QWidget
     Q_OBJECT
 
 public:
+    // 背景类型
     enum BgType
     {
-        FillColor = 0,
-        Pixmap
+        FillColor = 0, // 纯色
+        Pixmap         // 图片
     };
-    enum Tool
-    {
-        Pencil = 0,
-        Eraser,
-        Fill
-    };
+
+    // 绘制操作类型
     enum DrawingType
     {
-        DT_Tool = 0,
-        DT_Shape
+        DT_Tool = 0, // 工具
+        DT_Shape     // 形状
+    };
+
+    // 工具类型
+    enum Tool
+    {
+        Pencil = 0, // 铅笔
+        Eraser,     // 橡皮
+        Fill        // 填充
     };
 
     Canvas(QWidget *parent = nullptr);
     ~Canvas();
 
+    // 设置背景图片
     void setCanvasBGPixmap(const QPixmap &pix);
+
+    // 设置背景颜色
     void setCanvasBGColor(const QColor &color);
 
+    // 设置画布大小
     void setCanvasSize(const int &w, const int &h);
+
+    // 选择工具
     void setTool(const Tool &tool);
 
+    // 选择形状
     template<typename ShapeItemType>
     void setDrawingShape()
     {
@@ -54,8 +65,19 @@ public:
         this->setCursor(Qt::CrossCursor);
     }
 
+    // 设置笔的线宽
     void setPenSize(const int &size);
+
+    // 设置橡皮宽度
     void setEraserSize(const int &size);
+
+    // 设置画笔颜色
+    void setPenColor(const QColor &color);
+
+    // 设置填充颜色
+    void setFillColor(const QColor &color);
+
+    // 取消选中
     void cancelSelected();
 
 signals:
@@ -68,21 +90,14 @@ protected:
     void undoStackPush();
     void drawingTool(const QPoint &pos);
     void drawingShape(const QPoint &pos);
+    void fill();
 
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-
     void leaveEvent(QEvent *event) override;
-
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
-
-    void fill();
-    void floodFil(const QPoint& startPos, const QColor& fillColor, int tolerance = 0);
-
-    // 颜色相似度判断函数
-    bool isColorSimilar(QRgb color1, QRgb color2, int tolerance);
 
 private:
     BgType m_bgType = FillColor;

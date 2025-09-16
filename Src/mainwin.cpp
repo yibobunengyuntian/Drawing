@@ -54,6 +54,8 @@ void MainWin::initialize()
     connect(m_pDrawingWet, SIGNAL(mouseMove(QString)), m_pLabelPos, SLOT(setText(QString)));
     connect(m_pDrawingWet, SIGNAL(showSelectedRect(QString)), m_pLabelSelectedRect, SLOT(setText(QString)));
     connect(m_pDrawingWet, SIGNAL(canvasSizeChanged(QString)), m_pLabelSize, SLOT(setText(QString)));
+    connect(m_pBtnPenColor, SIGNAL(colorChanged(QColor)), m_pDrawingWet, SLOT(setPenColor(QColor)));
+    connect(m_pBtnFillColor, SIGNAL(colorChanged(QColor)), m_pDrawingWet, SLOT(setFillColor(QColor)));
     connect(m_pBtnPencil, &QPushButton::clicked, this, [=](){
         m_pDrawingWet->setDrawingTool(Canvas::Pencil);
     });

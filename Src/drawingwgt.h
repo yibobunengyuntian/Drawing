@@ -21,6 +21,9 @@ public:
         m_pCanvas->setDrawingShape<DrawingItemType>();
     }
 
+protected:
+    void initialize();
+
 signals:
     void mouseMove(const QString &str);
     void showSelectedRect(const QString &str);
@@ -42,6 +45,14 @@ public slots:
     void cancelSelected()
     {
         m_pCanvas->cancelSelected();
+    }
+    void setPenColor(const QColor &color)
+    {
+        m_pCanvas->setPenColor(color);
+    }
+    void setFillColor(const QColor &color)
+    {
+        m_pCanvas->setFillColor(color);
     }
 
 protected:

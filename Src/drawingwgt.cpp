@@ -4,6 +4,11 @@
 DrawingWgt::DrawingWgt(QWidget *parent)
     : QWidget(parent)
 {
+    initialize();
+}
+
+void DrawingWgt::initialize()
+{
     setMouseTracking(true);
     QGridLayout *gridLayout = new QGridLayout(this);
     gridLayout->setSpacing(0);
@@ -26,7 +31,6 @@ DrawingWgt::DrawingWgt(QWidget *parent)
     connect(m_pCanvas, SIGNAL(mouseMove(QString)), this, SIGNAL(mouseMove(QString)));
     connect(m_pCanvas, SIGNAL(showSelectedRect(QString)), this, SIGNAL(showSelectedRect(QString)));
     connect(m_pCanvas, SIGNAL(canvasSizeChanged(QString)), this, SIGNAL(canvasSizeChanged(QString)));
-
 }
 
 void DrawingWgt::paintEvent(QPaintEvent *event)
@@ -62,9 +66,6 @@ void DrawingWgt::paintEvent(QPaintEvent *event)
         painter.drawLine(m_currPos.x(), 19, m_currPos.x(), 5);
         painter.drawLine(19, m_currPos.y(), 5, m_currPos.y());
     }
-
-    QPainterPath path;
-
 }
 
 void DrawingWgt::resizeEvent(QResizeEvent *event)

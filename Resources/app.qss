@@ -1,3 +1,7 @@
+QWidget {
+	font-family: "Microsoft YaHei";
+}
+
 QScrollArea {
     background: transparent;
     border: none;
@@ -28,6 +32,35 @@ QPushButton:checked
 }
 
 QPushButton:disabled {
+    background-color: white;
+    color: #666666;
+}
+
+QToolButton {
+    background-color: white;
+    border: none;
+    color: black;
+    font-size: 16px;
+    border-radius: 4px;
+}
+
+QToolButton:hover {
+    background-color: #f0f0f0;
+    border: 1px solid black;
+}
+
+QToolButton:pressed {
+    background-color: #f3f3f3;
+    border: 1px solid black;
+}
+
+QToolButton:checked
+{
+    background-color: #f3f3f3;
+    border: 2px solid #003e92;
+}
+
+QToolButton:disabled {
     background-color: white;
     color: #666666;
 }

@@ -1,7 +1,5 @@
 #include "canvas.h"
-#include "shapecorveitem.h"
-#include "shaperectitem.h"
-#include "shapeellipseitem.h"
+#include "utils.h"
 
 Canvas::Canvas(QWidget *parent)
     : QWidget(parent)
@@ -11,44 +9,6 @@ Canvas::Canvas(QWidget *parent)
     this->setFixedSize(800, 600);
     setCanvasBGColor(Qt::white);
     initCanvas();
-
-    // foreach (auto btn, this->findChildren<QAbstractButton*>()) {
-    //     connect(btn, &QAbstractButton::pressed, this, [=](){
-    //         if(m_currDrawingItem)
-    //         {
-    //             m_currDrawingItem->paint(m_pPainter.get());
-    //             m_currDrawingItem.reset();
-    //             update();
-    //             undoStackPush();
-    //         }
-    //     });
-    // }
-
-    // m_pLabelLineSize->setText(QString::number(m_pSliderLineSize->value()));
-    // m_pLabelEraserSize->setText(QString::number(m_pSliderEraserSize->value()));
-    // connect(m_pSliderLineSize, &QSlider::valueChanged, this, [=](int value){
-    //     m_pLabelLineSize->setText(QString::number(value));
-    // });
-    // connect(m_pSliderEraserSize, &QSlider::valueChanged, this, [=](int value){
-    //     m_pLabelEraserSize->setText(QString::number(value));
-    // });
-    // connect(m_pBtnClear, &QPushButton::clicked, this, [=](){
-    //     initCanvas();
-    //     m_undoStack.clear();
-    // });
-    // connect(m_pBtnRedo, &QPushButton::clicked, this, [=](){
-    //     m_undoStack.redo();
-    // });
-    // connect(m_pBtnUndo, &QPushButton::clicked, this, [=](){
-    //     m_undoStack.undo();
-    // });
-    // connect(m_pBtnSave, &QPushButton::clicked, this, [=](){
-    //     QPixmap pix = m_bgPixmap;
-    //     QPainter painter(&pix);
-    //     painter.drawPixmap(0, 0, m_canvasPixmap);
-    //     pix.save("D:/BoilerDetectionSystem_test/text_1.png");
-    //     m_canvasPixmap.save("D:/BoilerDetectionSystem_test/text_2.png");
-    // });
 }
 
 Canvas::~Canvas()
@@ -110,9 +70,8 @@ void Canvas::drawingTool(const QPoint &pos)
             m_currLinePath.moveTo(m_lastPos);
         }
         m_currLinePath.lineTo(pos);
-
-        m_pPainter->setCompositionMode(QPainter::CompositionMode_SourceOver);
         m_pPainter->restore();
+        m_pPainter->setCompositionMode(QPainter::CompositionMode_SourceOver);
     }
 }
 
@@ -128,6 +87,56 @@ void Canvas::drawingShape(const QPoint &pos)
             m_currDrawingItem->drawing(m_pressPos, pos);
         }
     }
+}
+
+void Canvas::fill()
+{
+    QImage image = m_canvasPixmap.toImage();
+    if (image.isNull()) return;
+
+    QRgb oldColor = image.pixel(m_pressPos);
+    QRgb newColor = qRgba(m_fillColor.red(), m_fillColor.green(), m_fillColor.blue(), 255);
+
+    if (oldColor == newColor) return;
+
+    const QPoint directions[] = {
+        QPoint(0, -1), QPoint(1, 0), QPoint(0, 1), QPoint(-1, 0)
+    };
+    const int directionCount = 4;
+
+    QQueue<QPoint> pixelsToCheck;
+    pixelsToCheck.enqueue(m_pressPos);
+
+    const int width = image.width();
+    const int height = image.height();
+
+    while (!pixelsToCheck.empty()) {
+        QPoint current = pixelsToCheck.dequeue();
+
+        int x = current.x();
+        int y = current.y();
+
+        if (x < 0 || x >= width || y < 0 || y >= height)
+            continue;
+
+        QRgb currentColor = image.pixel(x, y);
+
+        if (!Utils::isColorSimilar(currentColor, oldColor, 70))
+            continue;
+
+        if (currentColor == newColor)
+            continue;
+
+        image.setPixel(x, y, newColor);
+
+        for (int i = 0; i < directionCount; ++i) {
+            QPoint neighbor = current + directions[i];
+            pixelsToCheck.enqueue(neighbor);
+        }
+    }
+
+    m_pPainter->drawImage(0, 0, image);
+    update();
 }
 
 void Canvas::setCanvasBGPixmap(const QPixmap &pix)
@@ -183,13 +192,15 @@ void Canvas::setTool(const Tool &tool)
     QCursor cursor = Qt::ArrowCursor;
     switch (m_tool) {
     case Pencil:
-        cursor = QCursor(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/pencil.png"), 5, 28);
+        cursor = QCursor(Utils::replaceOpaqueColorWithPainter(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/pencil.png"), m_pen.color()), 5, 28);
         break;
     case Eraser:
+    {
         cursor = QCursor(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/eraser.png"), 12, 29);
+    }
         break;
     case Fill:
-        cursor = QCursor(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/fill.png"), 26, 15);
+        cursor = QCursor(Utils::replaceOpaqueColorWithPainter(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/fill.png"), m_fillColor), 26, 15);
         break;
     default:
         break;
@@ -207,6 +218,26 @@ void Canvas::setPenSize(const int &size)
 void Canvas::setEraserSize(const int &size)
 {
     m_eraser.setWidth(size);
+    update();
+}
+
+void Canvas::setPenColor(const QColor &color)
+{
+    m_pen.setColor(color);
+    if(m_dt == DT_Tool)
+    {
+        setTool(m_tool);
+    }
+    update();
+}
+
+void Canvas::setFillColor(const QColor &color)
+{
+    m_fillColor = color;
+    if(m_dt == DT_Tool)
+    {
+        setTool(m_tool);
+    }
     update();
 }
 
@@ -253,6 +284,7 @@ void Canvas::paintEvent(QPaintEvent *event)
 
 void Canvas::resizeEvent(QResizeEvent *event)
 {
+    Q_UNUSED(event)
     emit canvasSizeChanged(QString("%1 × %2 像素").arg(this->width()).arg(this->height()));
 }
 
@@ -334,7 +366,6 @@ void Canvas::mouseMoveEvent(QMouseEvent *event)
             {
                 drawingTool(currPos);
             }
-
         }
 
         m_lastPos = currPos;
@@ -350,80 +381,3 @@ void Canvas::mouseMoveEvent(QMouseEvent *event)
     QWidget::mouseMoveEvent(event);
 }
 
-void Canvas::fill()
-{
-    floodFil(m_pressPos, m_fillColor, 70);
-}
-
-void Canvas::floodFil(const QPoint &startPos, const QColor &fillColor, int tolerance)
-{
-    QImage image = m_canvasPixmap.toImage();
-    if (image.isNull()) return;
-
-    QRgb oldColor = image.pixel(startPos);
-    QRgb newColor = fillColor.rgb();
-
-    if (oldColor == newColor) return;
-
-    const QPoint directions[] = {
-        QPoint(0, -1), QPoint(1, 0), QPoint(0, 1), QPoint(-1, 0)
-    };
-    const int directionCount = 4;
-
-    std::queue<QPoint> pixelsToCheck;
-    pixelsToCheck.push(startPos);
-
-    const int width = image.width();
-    const int height = image.height();
-
-    while (!pixelsToCheck.empty()) {
-        QPoint current = pixelsToCheck.front();
-        pixelsToCheck.pop();
-
-        int x = current.x();
-        int y = current.y();
-
-        if (x < 0 || x >= width || y < 0 || y >= height)
-            continue;
-
-        QRgb currentColor = image.pixel(x, y);
-
-        // 添加颜色容差判断
-        if (!isColorSimilar(currentColor, oldColor, tolerance))
-            continue;
-
-        if (currentColor == newColor) // 避免重复处理
-            continue;
-
-        image.setPixel(x, y, newColor);
-
-        for (int i = 0; i < directionCount; ++i) {
-            QPoint neighbor = current + directions[i];
-            pixelsToCheck.push(neighbor);
-        }
-    }
-
-    m_pPainter.reset();
-    m_canvasPixmap = QPixmap::fromImage(image);
-    m_pPainter = std::make_shared<QPainter>(&m_canvasPixmap);
-    // m_pPainter->setRenderHint(QPainter::Antialiasing, true);
-    m_pPainter->setRenderHint(QPainter::SmoothPixmapTransform, true);
-    m_pPainter->setRenderHint(QPainter::TextAntialiasing, true);
-
-    m_pPainter->translate(-m_offsetPos);
-
-    update();
-}
-
-bool Canvas::isColorSimilar(QRgb color1, QRgb color2, int tolerance)
-{
-    if (tolerance == 0) return color1 == color2;
-
-    int rDiff = qAbs(qRed(color1) - qRed(color2));
-    int gDiff = qAbs(qGreen(color1) - qGreen(color2));
-    int bDiff = qAbs(qBlue(color1) - qBlue(color2));
-    int aDiff = qAbs(qAlpha(color1) - qAlpha(color2));
-
-    return (rDiff <= tolerance && gDiff <= tolerance &&
-            bDiff <= tolerance && aDiff <= tolerance);
-}

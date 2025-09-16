@@ -14,3 +14,4 @@ SOURCES += \
 
 include($$PWD/Canvas/Canvas.pri)
 include($$PWD/FlowLayout/FlowLayout.pri)
+include($$PWD/ColorButton/ColorButton.pri)

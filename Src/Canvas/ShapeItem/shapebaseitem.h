@@ -8,76 +8,18 @@
 class ShapeBaseItem
 {
 public:
-    ShapeBaseItem(const QPoint &startPoint, const QPoint &endPoint)
-    {
-        m_pos = (startPoint + endPoint) / 2;
-    }
+    ShapeBaseItem(const QPoint &startPoint, const QPoint &endPoint);
 
-    bool selectedOpPoint(const QPoint &pos)
-    {
-        m_pressPos = pos - m_pos;
-        for(int i = 0; i < m_opPoints.count(); ++i)
-        {
-            if(QLineF(m_opPoints[i], m_pressPos).length() < 6)
-            {
-                m_selectOpIndex = i;
-                return true;
-            }
-        }
-         m_selectOpIndex = -1;
-        return m_opPath.contains(m_pressPos);
-    }
+    bool selectedOpPoint(const QPoint &pos);
 
-    virtual void move(const QPoint &pos)
-    {
-        if(m_selectOpIndex != -1)
-        {
-            moveOneOp(pos);
-        }
-        else
-        {
-            for(int i = 0; i < m_opPoints.count(); ++i)
-            {
-                m_opPoints[i] = m_opPoints[i] + pos;
-            }
-        }
-        updatePath();
-    }
-
-    virtual Qt::CursorShape hoverStyle(const QPoint &pos)
-    {
-        return Qt::CrossCursor;
-    }
+    virtual void move(const QPoint &pos);
+    virtual Qt::CursorShape hoverStyle(const QPoint &pos);
 
     virtual void drawing(const QPoint &startPoint, const QPoint &endPoint) = 0;
 
-    virtual void paint(QPainter *painter, bool isShowOP = false)
-    {
-        painter->save();
-        painter->translate(m_pos);
-        painter->drawPath(m_path);
+    virtual void paint(QPainter *painter, bool isShowOP = false);
 
-        if(isShowOP)
-        {
-            QPen pen(Qt::black);
-            pen.setStyle(Qt::DashLine);
-            painter->setPen(pen);
-            painter->drawPath(m_opPath);
-            painter->setPen(Qt::black);
-            painter->setBrush(Qt::white);
-            foreach (QPoint opPoint, m_opPoints) {
-                painter->drawRect(opPoint.x() - 5, opPoint.y() - 5, 10, 10);
-            }
-        }
-        painter->restore();
-    }
-
-    QRect boundingRect()
-    {
-        QRectF rect = m_path.boundingRect();
-        rect.translate(m_pos);
-        return rect.toRect();
-    }
+    QRect boundingRect();
 
 protected:
     virtual void updatePath() = 0;
