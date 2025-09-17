@@ -42,14 +42,17 @@ void MainWin::initialize()
     m_pBtnPencil->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/pencil.png"));
     m_pBtnEraser->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/eraser.png"));
     m_pBtnFill->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/fill.png"));
+    m_pBtnText->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/text.png"));
     m_pBtnPencil->setToolTip("铅笔");
     m_pBtnEraser->setToolTip("橡皮");
     m_pBtnFill->setToolTip("填充");
+    m_pBtnText->setToolTip("文本");
     m_pBtnPencil->setChecked(true);
 
     m_pBtnDrawingGroup->addButton(m_pBtnPencil);
     m_pBtnDrawingGroup->addButton(m_pBtnEraser);
     m_pBtnDrawingGroup->addButton(m_pBtnFill);
+    m_pBtnDrawingGroup->addButton(m_pBtnText);
 
     connect(m_pDrawingWet, SIGNAL(mouseMove(QString)), m_pLabelPos, SLOT(setText(QString)));
     connect(m_pDrawingWet, SIGNAL(showSelectedRect(QString)), m_pLabelSelectedRect, SLOT(setText(QString)));
@@ -65,6 +68,9 @@ void MainWin::initialize()
     connect(m_pBtnFill, &QPushButton::clicked, this, [=](){
         m_pDrawingWet->setDrawingTool(Canvas::Fill);
     });
+    connect(m_pBtnText, &QPushButton::clicked, this, [=](){
+        m_pDrawingWet->setDrawingTool(Canvas::Text);
+    });
 
     m_pLabelLineSize->setText(QString::number(m_pSliderLineSize->value()));
     m_pLabelEraserSize->setText(QString::number(m_pSliderEraserSize->value()));
@@ -79,7 +85,12 @@ void MainWin::initialize()
         m_pDrawingWet->setEraserSize(value);
     });
 
-    foreach (auto btn, this->findChildren<QAbstractButton*>()) {
+    foreach (auto btn, m_pOPWgt->findChildren<QAbstractButton*>()) {
+        connect(btn, &QAbstractButton::pressed, this, [=](){
+            m_pDrawingWet->cancelSelected();
+        });
+    }
+    foreach (auto btn, m_pMenuWgt->findChildren<QAbstractButton*>()) {
         connect(btn, &QAbstractButton::pressed, this, [=](){
             m_pDrawingWet->cancelSelected();
         });

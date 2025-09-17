@@ -1,5 +1,6 @@
 #include "canvas.h"
 #include "utils.h"
+#include "shapetextitem.h"
 
 Canvas::Canvas(QWidget *parent)
     : QWidget(parent)
@@ -9,6 +10,14 @@ Canvas::Canvas(QWidget *parent)
     this->setFixedSize(800, 600);
     setCanvasBGColor(Qt::white);
     initCanvas();
+    setTool(Pencil);
+
+    m_pen = QPen(Qt::black);
+    m_pen.setCapStyle(Qt::RoundCap);
+    m_pen.setJoinStyle(Qt::RoundJoin);
+    m_eraser =  QPen(Qt::transparent);
+    m_eraser.setCapStyle(Qt::RoundCap);
+    m_eraser.setJoinStyle(Qt::RoundJoin);
 }
 
 Canvas::~Canvas()
@@ -29,17 +38,20 @@ void Canvas::initCanvas()
 
     m_pPainter->translate(-m_offsetPos);
 
-    m_pen = QPen(Qt::black);
-    m_pen.setCapStyle(Qt::RoundCap);
-    m_pen.setJoinStyle(Qt::RoundJoin);
+    if(m_pTextMenu == nullptr)
+    {
+        if(this->parentWidget())
+        {
+        m_pTextMenu = new TextMenu(this->parentWidget());
+        }
+        else
+        {
+            m_pTextMenu = new TextMenu(this);
+        }
+        m_pTextMenu->hide();
+    }
 
-    // 设置橡皮擦样式
-    m_eraser =  QPen(Qt::transparent);
-    m_eraser.setCapStyle(Qt::RoundCap);
-    m_eraser.setJoinStyle(Qt::RoundJoin);
-
-    setTool(Pencil);
-    update();  // 触发界面重绘
+    update();
 }
 
 void Canvas::undoStackPush()
@@ -72,6 +84,20 @@ void Canvas::drawingTool(const QPoint &pos)
         m_currLinePath.lineTo(pos);
         m_pPainter->restore();
         m_pPainter->setCompositionMode(QPainter::CompositionMode_SourceOver);
+    }
+    if(m_tool == Text)
+    {
+        if(!m_currDrawingItem)
+        {
+            auto textItem = std::make_shared<ShapeTextItem>(m_pressPos, pos);
+            m_pTextMenu->show();
+            m_pTextMenu->move(40, 40);
+            m_pTextMenu->bindTextItem(textItem);
+            m_currDrawingItem = textItem;
+        }
+        else {
+            m_currDrawingItem->drawing(m_pressPos, pos);
+        }
     }
 }
 
@@ -202,6 +228,9 @@ void Canvas::setTool(const Tool &tool)
     case Fill:
         cursor = QCursor(Utils::replaceOpaqueColorWithPainter(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/fill.png"), m_fillColor), 26, 15);
         break;
+    case Text:
+        cursor = Qt::CrossCursor;
+        break;
     default:
         break;
     }
@@ -250,6 +279,7 @@ void Canvas::cancelSelected()
         update();
         undoStackPush();
         emit showSelectedRect("");
+        m_pTextMenu->hide();
     }
 }
 

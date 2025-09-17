@@ -8,7 +8,7 @@
 class ColorButton : public QToolButton { // 或 QPushButton
     Q_OBJECT
 public:
-    explicit ColorButton(QWidget *parent);
+    explicit ColorButton(QWidget *parent = nullptr);
 
     void setColor(const QColor &color);
 

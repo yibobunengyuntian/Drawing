@@ -6,6 +6,7 @@
 #include <QPixmap>
 #include <QPainter>
 #include <QBuffer>
+#include <QFrame>
 
 class Utils
 {
@@ -26,6 +27,8 @@ public:
 
     // base64转图片
     static QImage base64ToImage(const QString &base64);
+
+
 };
 
 #endif // UTILS_H

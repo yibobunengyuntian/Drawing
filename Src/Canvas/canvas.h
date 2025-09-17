@@ -11,6 +11,7 @@
 #include <QQueue>
 
 #include "shapebaseitem.h"
+#include "textmenu.h"
 
 class Canvas: public QWidget
 {
@@ -36,7 +37,8 @@ public:
     {
         Pencil = 0, // 铅笔
         Eraser,     // 橡皮
-        Fill        // 填充
+        Fill,       // 填充
+        Text        // 文本
     };
 
     Canvas(QWidget *parent = nullptr);
@@ -124,6 +126,8 @@ private:
     DrawingType m_dt = DT_Tool;
     Tool m_tool = Pencil;
     std::function<std::shared_ptr<ShapeBaseItem>(QPoint, QPoint)> m_createShapeFunc = nullptr;
+
+    TextMenu *m_pTextMenu = nullptr;
 };
 
 class DrawingCommand : public QUndoCommand

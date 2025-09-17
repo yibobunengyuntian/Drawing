@@ -216,8 +216,8 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="m_pBtnFill">
+           <item row="1" column="1">
+            <widget class="QPushButton" name="m_pBtnEraser">
              <property name="minimumSize">
               <size>
                <width>30</width>
@@ -239,7 +239,29 @@
             </widget>
            </item>
            <item row="1" column="0">
-            <widget class="QPushButton" name="m_pBtnEraser">
+            <widget class="QPushButton" name="m_pBtnFill">
+             <property name="minimumSize">
+              <size>
+               <width>30</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>30</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="m_pBtnText">
              <property name="minimumSize">
               <size>
                <width>30</width>
