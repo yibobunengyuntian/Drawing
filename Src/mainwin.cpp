@@ -34,8 +34,14 @@ void MainWin::initialize()
     m_pLabelSelectedRectIcon->setPixmap(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/selectedRect.png"));
     m_pLabelSizeIcon->setPixmap(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/size.png"));
 
+    m_pBtnOpen->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/open.png"));
+    m_pBtnSave->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/save.png"));
+    m_pBtnExport->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/export.png"));
     m_pBtnUndo->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/undo.png"));
     m_pBtnRedo->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/redo.png"));
+    m_pBtnOpen->setToolTip("打开");
+    m_pBtnSave->setToolTip("保存");
+    m_pBtnExport->setToolTip("导出图片");
     m_pBtnUndo->setToolTip("撤销");
     m_pBtnRedo->setToolTip("恢复");
 
@@ -43,22 +49,30 @@ void MainWin::initialize()
     m_pBtnEraser->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/eraser.png"));
     m_pBtnFill->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/fill.png"));
     m_pBtnText->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/text.png"));
+    m_pBtnPicture->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/picture.png"));
     m_pBtnPencil->setToolTip("铅笔");
     m_pBtnEraser->setToolTip("橡皮");
     m_pBtnFill->setToolTip("填充");
     m_pBtnText->setToolTip("文本");
+    m_pBtnPicture->setToolTip("图片");
     m_pBtnPencil->setChecked(true);
+
+    m_pBgType->addItems(QStringList() << "颜色" << "图片");
+    m_pBtnBgPicture->hide();
+    m_pBtnBgColor->setColor(Qt::white);
 
     m_pBtnDrawingGroup->addButton(m_pBtnPencil);
     m_pBtnDrawingGroup->addButton(m_pBtnEraser);
     m_pBtnDrawingGroup->addButton(m_pBtnFill);
     m_pBtnDrawingGroup->addButton(m_pBtnText);
+    m_pBtnDrawingGroup->addButton(m_pBtnPicture);
 
     connect(m_pDrawingWet, SIGNAL(mouseMove(QString)), m_pLabelPos, SLOT(setText(QString)));
     connect(m_pDrawingWet, SIGNAL(showSelectedRect(QString)), m_pLabelSelectedRect, SLOT(setText(QString)));
     connect(m_pDrawingWet, SIGNAL(canvasSizeChanged(QString)), m_pLabelSize, SLOT(setText(QString)));
     connect(m_pBtnPenColor, SIGNAL(colorChanged(QColor)), m_pDrawingWet, SLOT(setPenColor(QColor)));
     connect(m_pBtnFillColor, SIGNAL(colorChanged(QColor)), m_pDrawingWet, SLOT(setFillColor(QColor)));
+    connect(m_pBtnBgColor, SIGNAL(colorChanged(QColor)), m_pDrawingWet, SLOT(setCanvasBGColor(QColor)));
     connect(m_pBtnPencil, &QPushButton::clicked, this, [=](){
         m_pDrawingWet->setDrawingTool(Canvas::Pencil);
     });
@@ -70,6 +84,38 @@ void MainWin::initialize()
     });
     connect(m_pBtnText, &QPushButton::clicked, this, [=](){
         m_pDrawingWet->setDrawingTool(Canvas::Text);
+    });
+    connect(m_pBtnPicture, &QPushButton::clicked, this, [=](){
+        m_pDrawingWet->setDrawingTool(Canvas::Picture);
+    });
+    connect(m_pBgType, &QComboBox::currentIndexChanged, this, [=](int index){
+        m_pBtnBgColor->setHidden(index != 0);
+        m_pBtnBgPicture->setHidden(index != 1);
+    });
+    connect(m_pBtnBgPicture, &QPushButton::clicked, this, [=](){
+        QString fileName = QFileDialog::getOpenFileName(
+            this,
+            "选择图片",
+            QDir::homePath(),
+            "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
+            );
+        if(!fileName.isEmpty())
+        {
+            m_pDrawingWet->setCanvasBGPixmap(QPixmap(fileName));
+        }
+    });
+
+    connect(m_pBtnExport, &QPushButton::clicked, this, [=](){
+        QString fileName = QFileDialog::getSaveFileName(
+            this,
+            "导出图片",
+            QDir::homePath(),
+            "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
+            );
+        if(!fileName.isEmpty())
+        {
+            m_pDrawingWet->exportPixmap().save(fileName);
+        }
     });
 
     m_pLabelLineSize->setText(QString::number(m_pSliderLineSize->value()));

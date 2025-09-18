@@ -1,6 +1,6 @@
 INCLUDEPATH += $$PWD
 
-include($$PWD/ShapeItem/ShapeItem.pri)
+include($$PWD/Items/Items.pri)
 
 HEADERS += \
     $$PWD/canvas.h \

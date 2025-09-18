@@ -6,7 +6,7 @@ TextMenu::TextMenu(QWidget *parent)
     initialize();
 }
 
-void TextMenu::bindTextItem(std::shared_ptr<ShapeTextItem> item)
+void TextMenu::bindTextItem(std::shared_ptr<ToolTextItem> item)
 {
     if(!item)
     {

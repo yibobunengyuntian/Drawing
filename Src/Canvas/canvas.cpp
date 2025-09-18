@@ -1,6 +1,7 @@
 #include "canvas.h"
 #include "utils.h"
-#include "shapetextitem.h"
+#include "tooltextitem.h"
+#include "toolpictureitem.h"
 
 Canvas::Canvas(QWidget *parent)
     : QWidget(parent)
@@ -8,13 +9,14 @@ Canvas::Canvas(QWidget *parent)
     setMouseTracking(true);
 
     this->setFixedSize(800, 600);
+    m_bgPixmap = QPixmap(this->size());
     setCanvasBGColor(Qt::white);
     initCanvas();
     setTool(Pencil);
 
     m_pen = QPen(Qt::black);
     m_pen.setCapStyle(Qt::RoundCap);
-    m_pen.setJoinStyle(Qt::RoundJoin);
+    m_pen.setJoinStyle(Qt::MiterJoin);
     m_eraser =  QPen(Qt::transparent);
     m_eraser.setCapStyle(Qt::RoundCap);
     m_eraser.setJoinStyle(Qt::RoundJoin);
@@ -29,14 +31,12 @@ void Canvas::initCanvas()
 {
     // 创建一个新的透明画布
     m_pPainter.reset();
-    m_canvasPixmap = QPixmap(m_bgPixmap.size());
+    m_canvasPixmap = QPixmap(this->size());
     m_canvasPixmap.fill(Qt::transparent);
     m_pPainter = std::make_shared<QPainter>(&m_canvasPixmap);
     // m_pPainter->setRenderHint(QPainter::Antialiasing, true);
     m_pPainter->setRenderHint(QPainter::SmoothPixmapTransform, true);
     m_pPainter->setRenderHint(QPainter::TextAntialiasing, true);
-
-    m_pPainter->translate(-m_offsetPos);
 
     if(m_pTextMenu == nullptr)
     {
@@ -89,11 +89,22 @@ void Canvas::drawingTool(const QPoint &pos)
     {
         if(!m_currDrawingItem)
         {
-            auto textItem = std::make_shared<ShapeTextItem>(m_pressPos, pos);
+            auto textItem = std::make_shared<ToolTextItem>(m_pressPos, pos);
             m_pTextMenu->show();
             m_pTextMenu->move(40, 40);
             m_pTextMenu->bindTextItem(textItem);
             m_currDrawingItem = textItem;
+        }
+        else {
+            m_currDrawingItem->drawing(m_pressPos, pos);
+        }
+    }
+    if(m_tool == Picture)
+    {
+        if(!m_currDrawingItem)
+        {
+            auto pictureItem = std::make_shared<ToolPictureItem>(m_pressPos, pos, m_picture);
+            m_currDrawingItem = pictureItem;
         }
         else {
             m_currDrawingItem->drawing(m_pressPos, pos);
@@ -167,43 +178,26 @@ void Canvas::fill()
 
 void Canvas::setCanvasBGPixmap(const QPixmap &pix)
 {
+    if(pix.isNull())
+    {
+        return;
+    }
     m_bgType = Pixmap;
     m_bgPixmap = pix;
-    this->setFixedSize(m_bgPixmap.size());
-
-
-    if(m_bgPixmap.width() * 1.0 / m_bgPixmap.height() > this->width() * 1.0 / this->height())
-    {
-        m_bgPixmap = m_bgPixmap.scaledToWidth(this->width(), Qt::SmoothTransformation);
-    }
-    else
-    {
-        m_bgPixmap = m_bgPixmap.scaledToHeight(this->height(), Qt::SmoothTransformation);
-    }
-
-    m_offsetPos = this->rect().center() - m_bgPixmap.rect().center();
-
-    initCanvas();
 }
 
 void Canvas::setCanvasBGColor(const QColor &color)
 {
     m_bgType = FillColor;
     m_bgColor = color;
-    m_bgPixmap = QPixmap(size());
     m_bgPixmap.fill(color);
     update();
 }
 
 void Canvas::setCanvasSize(const int &w, const int &h)
 {
-    if(m_bgType == Pixmap)
-    {
-        return;
-    }
-
     this->setFixedSize(w, h);
-    setCanvasBGColor(m_bgColor);
+    // setCanvasBGColor(m_bgColor);
 
     QPixmap pix = m_canvasPixmap;
     initCanvas();
@@ -230,6 +224,22 @@ void Canvas::setTool(const Tool &tool)
         break;
     case Text:
         cursor = Qt::CrossCursor;
+        break;
+    case Picture:
+    {
+        cursor = Qt::CrossCursor;
+
+        QString fileName = QFileDialog::getOpenFileName(
+            this,
+            "选择图片",
+            QDir::homePath(),
+            "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
+            );
+        if(!fileName.isEmpty())
+        {
+            m_picture.load(fileName);
+        }
+    }
         break;
     default:
         break;
@@ -283,6 +293,17 @@ void Canvas::cancelSelected()
     }
 }
 
+QPixmap Canvas::exportPixmap()
+{
+    QPixmap ep(this->size());
+    ep.fill(Qt::transparent);
+    QPainter per(&ep);
+    per.drawPixmap(this->rect(), m_bgPixmap);
+    per.drawPixmap(this->rect(), m_canvasPixmap);
+
+    return ep;
+}
+
 void Canvas::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
@@ -293,15 +314,18 @@ void Canvas::paintEvent(QPaintEvent *event)
 
     if (m_bgPixmap.isNull())
     {
-        return;
+        // return;
     }
 
-    painter.setClipRect(QRect(m_offsetPos, QSize(m_bgPixmap.width(), m_bgPixmap.height())));
+    int w = this->width();
+    int h = this->height();
+
+    painter.setClipRect(0, 0, w, h);
 
     // 居中绘制
-    painter.drawPixmap((width() - m_bgPixmap.width()) / 2.0,(height() - m_bgPixmap.height()) / 2.0, m_bgPixmap);
+    painter.drawPixmap(0, 0, w, h, m_bgPixmap);
 
-    painter.drawPixmap((width() - m_canvasPixmap.width()) / 2.0,(height() - m_canvasPixmap.height()) / 2.0, m_canvasPixmap);
+    painter.drawPixmap(0, 0, w, h, m_canvasPixmap);
 
     if(m_currDrawingItem)
     {

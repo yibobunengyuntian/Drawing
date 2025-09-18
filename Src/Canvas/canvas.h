@@ -9,8 +9,9 @@
 #include <QUndoStack>
 #include <QApplication>
 #include <QQueue>
+#include <QFileDialog>
 
-#include "shapebaseitem.h"
+#include "baseitem.h"
 #include "textmenu.h"
 
 class Canvas: public QWidget
@@ -38,7 +39,8 @@ public:
         Pencil = 0, // 铅笔
         Eraser,     // 橡皮
         Fill,       // 填充
-        Text        // 文本
+        Text,       // 文本
+        Picture     // 图片
     };
 
     Canvas(QWidget *parent = nullptr);
@@ -82,6 +84,8 @@ public:
     // 取消选中
     void cancelSelected();
 
+    QPixmap exportPixmap();
+
 signals:
     void mouseMove(const QString &str);
     void showSelectedRect(const QString &str);
@@ -110,7 +114,6 @@ private:
     QPen m_pen;
     QPen m_eraser;
     QColor m_fillColor;
-    QPoint m_offsetPos;
 
     bool m_isPress = false;
     bool m_isChanged = false;
@@ -120,14 +123,15 @@ private:
     QPixmap m_lastCanvasPixmap;
 
     QPainterPath m_currLinePath;
-    std::shared_ptr<ShapeBaseItem> m_currDrawingItem = nullptr;
+    std::shared_ptr<BaseItem> m_currDrawingItem = nullptr;
     bool m_isSelectedOp = false;
 
     DrawingType m_dt = DT_Tool;
     Tool m_tool = Pencil;
-    std::function<std::shared_ptr<ShapeBaseItem>(QPoint, QPoint)> m_createShapeFunc = nullptr;
+    std::function<std::shared_ptr<BaseItem>(QPoint, QPoint)> m_createShapeFunc = nullptr;
 
     TextMenu *m_pTextMenu = nullptr;
+    QPixmap m_picture;
 };
 
 class DrawingCommand : public QUndoCommand

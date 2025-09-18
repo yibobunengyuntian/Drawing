@@ -54,6 +54,18 @@ public slots:
     {
         m_pCanvas->setFillColor(color);
     }
+    void setCanvasBGColor(const QColor &color)
+    {
+        m_pCanvas->setCanvasBGColor(color);
+    }
+    void setCanvasBGPixmap(const QPixmap &pixmap)
+    {
+        m_pCanvas->setCanvasBGPixmap(pixmap);
+    }
+    QPixmap exportPixmap()
+    {
+        return m_pCanvas->exportPixmap();
+    }
 
 protected:
     void paintEvent(QPaintEvent *event) override;

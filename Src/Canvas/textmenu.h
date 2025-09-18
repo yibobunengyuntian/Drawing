@@ -13,7 +13,7 @@
 #include <QPushButton>
 #include <QStyledItemDelegate>
 
-#include "shapetextitem.h"
+#include "tooltextitem.h"
 
 class TextMenu: public QWidget
 {
@@ -21,7 +21,7 @@ class TextMenu: public QWidget
 public:
     TextMenu(QWidget *parent = nullptr);
 
-    void bindTextItem(std::shared_ptr<ShapeTextItem> item);
+    void bindTextItem(std::shared_ptr<ToolTextItem> item);
 
 protected:
     void initialize();
@@ -38,7 +38,7 @@ private:
     bool m_dragging;
     QPointF m_dragPosition;
 
-    std::shared_ptr<ShapeTextItem> m_bindTextItem = nullptr;
+    std::shared_ptr<ToolTextItem> m_bindTextItem = nullptr;
 
     QLineEdit *m_pText = nullptr;
     QComboBox *m_pFontFamily = nullptr;
