@@ -68,6 +68,17 @@ void MainWin::initialize()
     m_pBtnDrawingGroup->addButton(m_pBtnText);
     m_pBtnDrawingGroup->addButton(m_pBtnPicture);
 
+    foreach (auto btn, m_pMenuWgt->findChildren<QAbstractButton*>()) {
+        connect(btn, &QAbstractButton::pressed, this, [=](){
+            m_pDrawingWet->cancelSelected();
+        });
+    }
+    foreach (auto btn, m_pOPWgt->findChildren<QAbstractButton*>()) {
+        connect(btn, &QAbstractButton::pressed, this, [=](){
+            m_pDrawingWet->cancelSelected();
+        });
+    }
+
     connect(m_pDrawingWet, SIGNAL(mouseMove(QString)), m_pLabelPos, SLOT(setText(QString)));
     connect(m_pDrawingWet, SIGNAL(showSelectedRect(QString)), m_pLabelSelectedRect, SLOT(setText(QString)));
     connect(m_pDrawingWet, SIGNAL(canvasSizeChanged(QString)), m_pLabelSize, SLOT(setText(QString)));
@@ -170,16 +181,6 @@ void MainWin::initialize()
         m_pDrawingWet->setEraserSize(value);
     });
 
-    foreach (auto btn, m_pOPWgt->findChildren<QAbstractButton*>()) {
-        connect(btn, &QAbstractButton::pressed, this, [=](){
-            m_pDrawingWet->cancelSelected();
-        });
-    }
-    foreach (auto btn, m_pMenuWgt->findChildren<QAbstractButton*>()) {
-        connect(btn, &QAbstractButton::pressed, this, [=](){
-            m_pDrawingWet->cancelSelected();
-        });
-    }
 }
 
 template<typename ShapeItemType>

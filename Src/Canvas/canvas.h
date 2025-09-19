@@ -91,6 +91,9 @@ public:
     QVariantMap save();
     void load(const QVariantMap &data);
 
+    void restorePixmap(const QPixmap& pixmap);
+    void clearUndoStack();
+
 signals:
     void mouseMove(const QString &str);
     void showSelectedRect(const QString &str);
@@ -137,31 +140,6 @@ private:
 
     TextMenu *m_pTextMenu = nullptr;
     QPixmap m_picture;
-};
-
-class DrawingCommand : public QUndoCommand
-{
-public:
-    explicit DrawingCommand()
-    {
-
-    }
-    ~DrawingCommand()
-    {
-
-    }
-    void redo() override
-    {
-
-    }
-    void undo() override
-    {
-
-    }
-
-private:
-
-
 };
 
 #endif // CANVAS_H

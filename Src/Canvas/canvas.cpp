@@ -3,6 +3,7 @@
 #include "tooltextitem.h"
 #include "toolpictureitem.h"
 #include "toolcorveitem.h"
+#include "canvascommand.h"
 
 Canvas::Canvas(QWidget *parent)
     : QWidget(parent)
@@ -57,8 +58,11 @@ void Canvas::initCanvas()
 
 void Canvas::undoStackPush()
 {
-    // if(m_lastCanvasPixmap.toImage() != m_canvasPixmap.toImage())
-    //     m_undoStack.push(new DrawingCommand(this, m_lastCanvasPixmap, m_canvasPixmap));
+    if (!m_lastCanvasPixmap.isNull() && m_lastCanvasPixmap.toImage() != m_canvasPixmap.toImage()) {
+        DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap, m_canvasPixmap);
+        m_undoStack.push(command);
+    }
+    m_lastCanvasPixmap = QPixmap(); // 重置
 }
 
 void Canvas::drawingTool(const QPoint &pos)
@@ -298,12 +302,16 @@ void Canvas::setFillColor(const QColor &color)
 
 void Canvas::cancelSelected()
 {
-    if(m_currDrawingItem)
-    {
+    if(m_currDrawingItem) {
         m_currDrawingItem->paint(m_pPainter.get());
+
+        // 只有在有实际绘制内容时才提交到撤销栈
+        if (m_lastCanvasPixmap.toImage() != m_canvasPixmap.toImage()) {
+            undoStackPush();
+        }
+
         m_currDrawingItem.reset();
         update();
-        undoStackPush();
         emit showSelectedRect("");
         m_pTextMenu->hide();
     }
@@ -312,11 +320,13 @@ void Canvas::cancelSelected()
 void Canvas::undo()
 {
     m_undoStack.undo();
+    update();
 }
 
 void Canvas::redo()
 {
     m_undoStack.redo();
+    update();
 }
 
 QPixmap Canvas::exportPixmap()
@@ -350,7 +360,24 @@ void Canvas::load(const QVariantMap &data)
     this->setFixedSize(pix.size());
     initCanvas();
     m_pPainter->drawPixmap(0, 0, pix);
+    clearUndoStack();
     update();
+}
+
+void Canvas::restorePixmap(const QPixmap &pixmap)
+{
+    m_pPainter.reset();
+    m_canvasPixmap = pixmap;
+    m_pPainter = std::make_shared<QPainter>(&m_canvasPixmap);
+    m_pPainter->setRenderHint(QPainter::SmoothPixmapTransform, true);
+    m_pPainter->setRenderHint(QPainter::TextAntialiasing, true);
+    update();
+}
+
+void Canvas::clearUndoStack()
+{
+    m_undoStack.clear();
+    m_lastCanvasPixmap = QPixmap();
 }
 
 void Canvas::paintEvent(QPaintEvent *event)
@@ -403,23 +430,22 @@ void Canvas::mousePressEvent(QMouseEvent *event)
     m_pressPos = event->pos();
     m_lastPos = event->pos();
     m_pPainter->setPen(m_pen);
+
+    // 保存操作前的状态
     m_lastCanvasPixmap = m_canvasPixmap;
+
     m_currLinePath.clear();
 
-    if(m_currDrawingItem)
-    {
-        if(!m_currDrawingItem->selectedOpPoint(m_pressPos))
-        {
+    if(m_currDrawingItem) {
+        if(!m_currDrawingItem->selectedOpPoint(m_pressPos)) {
             cancelSelected();
-        }
-        else
-        {
+        } else {
             m_isSelectedOp = true;
         }
     }
-    if(m_dt == DT_Tool && m_tool == Fill)
-    {
+    if(m_dt == DT_Tool && m_tool == Fill) {
         fill();
+        undoStackPush(); // 填充操作立即提交
     }
 
     QWidget::mousePressEvent(event);
@@ -429,12 +455,12 @@ void Canvas::mouseReleaseEvent(QMouseEvent *event)
 {
     m_isPress = false;
     m_isSelectedOp = false;
-    if(m_tool == Pencil && m_dt == DT_Tool)
-    {
+
+    if(m_tool == Pencil && m_dt == DT_Tool) {
         cancelSelected();
     }
-    if(m_isChanged)
-    {
+
+    if(m_isChanged) {
         undoStackPush();
         m_isChanged = false;
     }
