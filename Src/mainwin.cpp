@@ -1,5 +1,6 @@
 #include "mainwin.h"
 
+#include "utils.h"
 #include "flowlayout.h"
 #include "shapelineitem.h"
 #include "shaperectitem.h"
@@ -7,7 +8,9 @@
 #include "shapetriangleitem.h"
 #include "shaperighttriangleitem.h"
 #include "shaperhombusitem.h"
-#include "utils.h"
+#include "shapepentagonitem.h"
+#include "shapehexagonitem.h"
+#include "shapearrowsitem.h"
 
 MainWin::MainWin(QWidget *parent)
     : QWidget(parent)
@@ -30,6 +33,9 @@ void MainWin::initialize()
     registerShapeItem<ShapeTriangleItem>("三角形");
     registerShapeItem<ShapeRightTriangleItem>("直角三角形");
     registerShapeItem<ShapeRhombusItem>("菱形");
+    registerShapeItem<ShapePentagonItem>("五边形");
+    registerShapeItem<ShapeHexagonItem>("六边形");
+    registerShapeItem<ShapeArrowsItem>("箭头");
 
     m_pLabelPosIcon->setPixmap(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/mousePos.png"));
     m_pLabelSelectedRectIcon->setPixmap(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/selectedRect.png"));
@@ -45,6 +51,11 @@ void MainWin::initialize()
     m_pBtnExport->setToolTip("导出图片");
     m_pBtnUndo->setToolTip("撤销");
     m_pBtnRedo->setToolTip("恢复");
+    m_pBtnOpen->setShortcut(QKeySequence("Ctrl+O"));
+    m_pBtnSave->setShortcut(QKeySequence("Ctrl+S"));
+    m_pBtnExport->setShortcut(QKeySequence("Ctrl+E"));
+    m_pBtnUndo->setShortcut(QKeySequence("Ctrl+Z"));
+    m_pBtnRedo->setShortcut(QKeySequence("Ctrl+Y"));
 
     m_pBtnPencil->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/pencil.png"));
     m_pBtnEraser->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/eraser.png"));

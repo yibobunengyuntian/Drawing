@@ -58,8 +58,30 @@ void Canvas::initCanvas()
 
 void Canvas::undoStackPush()
 {
-    if (!m_lastCanvasPixmap.isNull() && m_lastCanvasPixmap.toImage() != m_canvasPixmap.toImage()) {
-        DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap, m_canvasPixmap);
+    if(m_lastCanvasPixmap.toImage() == m_canvasPixmap.toImage())
+    {
+        return;
+    }
+    if(m_tool == Eraser && m_dt == DT_Tool)
+    {
+        QRect rect = m_currLinePath.boundingRect().toRect();
+        rect.setTopLeft(rect.topLeft() - QPoint(m_eraser.width() + 10, m_eraser.width() + 10));
+        rect.setBottomRight(rect.bottomRight() + QPoint(m_eraser.width() + 10, m_eraser.width() + 10));
+        rect = rect.intersected(m_canvasPixmap.rect());
+        DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap.copy(rect), m_canvasPixmap.copy(rect), rect.topLeft());
+        m_undoStack.push(command);
+    }
+    else if (m_tool == Fill && m_dt == DT_Tool) {
+        QRect rect = m_fillRect.intersected(m_canvasPixmap.rect());
+        DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap.copy(rect), m_canvasPixmap.copy(rect), rect.topLeft());
+        m_undoStack.push(command);
+    }
+    else if (m_currDrawingItem) {
+        QRect rect = m_currDrawingItem->boundingRect();
+        rect.setTopLeft(rect.topLeft() - QPoint(m_pen.width() + 10, m_pen.width() + 10));
+        rect.setBottomRight(rect.bottomRight() + QPoint(m_pen.width() + 10, m_pen.width() + 10));
+        rect = rect.intersected(m_canvasPixmap.rect());
+        DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap.copy(rect), m_canvasPixmap.copy(rect), rect.topLeft());
         m_undoStack.push(command);
     }
     m_lastCanvasPixmap = QPixmap(); // 重置
@@ -146,15 +168,15 @@ void Canvas::drawingShape(const QPoint &pos)
     }
 }
 
-void Canvas::fill()
+QRect Canvas::fill()
 {
     QImage image = m_canvasPixmap.toImage();
-    if (image.isNull()) return;
+    if (image.isNull()) return QRect();
 
     QRgb oldColor = image.pixel(m_pressPos);
     QRgb newColor = qRgba(m_fillColor.red(), m_fillColor.green(), m_fillColor.blue(), 255);
 
-    if (oldColor == newColor) return;
+    if (oldColor == newColor) return QRect();
 
     const QPoint directions[] = {
         QPoint(0, -1), QPoint(1, 0), QPoint(0, 1), QPoint(-1, 0)
@@ -166,6 +188,11 @@ void Canvas::fill()
 
     const int width = image.width();
     const int height = image.height();
+
+    int minX = m_pressPos.x();
+    int maxX = m_pressPos.x();
+    int minY = m_pressPos.y();
+    int maxY = m_pressPos.y();
 
     while (!pixelsToCheck.empty()) {
         QPoint current = pixelsToCheck.dequeue();
@@ -186,14 +213,22 @@ void Canvas::fill()
 
         image.setPixel(x, y, newColor);
 
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+
         for (int i = 0; i < directionCount; ++i) {
             QPoint neighbor = current + directions[i];
             pixelsToCheck.enqueue(neighbor);
         }
     }
 
+    QRect boundingBox(minX, minY, maxX - minX + 1, maxY - minY + 1);
     m_pPainter->drawImage(0, 0, image);
     update();
+
+    return boundingBox;
 }
 
 void Canvas::setCanvasBGPixmap(const QPixmap &pix)
@@ -236,7 +271,7 @@ void Canvas::setTool(const Tool &tool)
         break;
     case Eraser:
     {
-        cursor = QCursor(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/eraser.png"), 12, 29);
+        cursor = QCursor(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/eraser.png"), 9, 32);
     }
         break;
     case Fill:
@@ -303,14 +338,13 @@ void Canvas::setFillColor(const QColor &color)
 void Canvas::cancelSelected()
 {
     if(m_currDrawingItem) {
+        m_pPainter->setPen(m_pen);
         m_currDrawingItem->paint(m_pPainter.get());
 
-        // 只有在有实际绘制内容时才提交到撤销栈
-        if (m_lastCanvasPixmap.toImage() != m_canvasPixmap.toImage()) {
-            undoStackPush();
-        }
+        undoStackPush();
 
         m_currDrawingItem.reset();
+        m_currDrawingItem = nullptr;
         update();
         emit showSelectedRect("");
         m_pTextMenu->hide();
@@ -364,13 +398,19 @@ void Canvas::load(const QVariantMap &data)
     update();
 }
 
-void Canvas::restorePixmap(const QPixmap &pixmap)
+void Canvas::drawingPixmap(const QPixmap &pixmap, const QPoint &pos)
 {
-    m_pPainter.reset();
-    m_canvasPixmap = pixmap;
-    m_pPainter = std::make_shared<QPainter>(&m_canvasPixmap);
-    m_pPainter->setRenderHint(QPainter::SmoothPixmapTransform, true);
-    m_pPainter->setRenderHint(QPainter::TextAntialiasing, true);
+    // 保存原来的合成模式
+    QPainter::CompositionMode oldMode = m_pPainter->compositionMode();
+
+    // 设置源复制模式（直接替换，不混合）
+    m_pPainter->setCompositionMode(QPainter::CompositionMode_Source);
+
+    // 绘制pixmap
+    m_pPainter->drawPixmap(pos, pixmap);
+
+    // 恢复原来的合成模式
+    m_pPainter->setCompositionMode(oldMode);
     update();
 }
 
@@ -444,7 +484,7 @@ void Canvas::mousePressEvent(QMouseEvent *event)
         }
     }
     if(m_dt == DT_Tool && m_tool == Fill) {
-        fill();
+        m_fillRect = fill();
         undoStackPush(); // 填充操作立即提交
     }
 
@@ -483,7 +523,10 @@ void Canvas::mouseMoveEvent(QMouseEvent *event)
 
     if(m_isPress)
     {
-        m_isChanged = true;
+        if(m_dt == DT_Tool && m_tool == Eraser)
+        {
+            m_isChanged = true;
+        }
 
         if(m_isSelectedOp)
         {

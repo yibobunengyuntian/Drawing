@@ -19,7 +19,7 @@ public:
 
     virtual void paint(QPainter *painter, bool isShowOP = false);
 
-    QRect boundingRect();
+    virtual QRect boundingRect();
 
 protected:
     virtual void updatePath() = 0;

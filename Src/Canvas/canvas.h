@@ -91,7 +91,7 @@ public:
     QVariantMap save();
     void load(const QVariantMap &data);
 
-    void restorePixmap(const QPixmap& pixmap);
+    void drawingPixmap(const QPixmap &pixmap, const QPoint &pos);
     void clearUndoStack();
 
 signals:
@@ -104,7 +104,7 @@ protected:
     void undoStackPush();
     void drawingTool(const QPoint &pos);
     void drawingShape(const QPoint &pos);
-    void fill();
+    QRect fill();
 
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
@@ -122,6 +122,7 @@ private:
     QPen m_pen;
     QPen m_eraser;
     QColor m_fillColor;
+    QRect m_fillRect;
 
     bool m_isPress = false;
     bool m_isChanged = false;

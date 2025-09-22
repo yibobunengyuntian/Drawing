@@ -6,25 +6,10 @@
 
 class Canvas;
 
-class CanvasCommand : public QUndoCommand
-{
-public:
-    explicit CanvasCommand(Canvas* canvas, const QPixmap& oldPixmap, const QPixmap& newPixmap);
-    ~CanvasCommand() override;
-
-    void undo() override;
-    void redo() override;
-
-private:
-    Canvas* m_canvas;
-    QPixmap m_oldPixmap;
-    QPixmap m_newPixmap;
-};
-
 class DrawingCommand : public QUndoCommand
 {
 public:
-    DrawingCommand(Canvas* canvas, const QPixmap& before, const QPixmap& after);
+    DrawingCommand(Canvas* canvas, const QPixmap& before, const QPixmap& after, const QPoint &pos = QPoint(0, 0));
     void undo() override;
     void redo() override;
 
@@ -32,6 +17,7 @@ private:
     Canvas* m_canvas;
     QPixmap m_before;
     QPixmap m_after;
+    QPoint m_pos;
 };
 
 #endif // CANVASCOMMAND_H

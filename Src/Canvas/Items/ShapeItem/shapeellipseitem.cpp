@@ -9,7 +9,7 @@ ShapeEllipseItem::ShapeEllipseItem(const QPoint &startPoint, const QPoint &endPo
 void ShapeEllipseItem::updatePath()
 {
     m_path.clear();
-    m_path.addEllipse(QRect(m_opPoints.first(), m_opPoints.last()));
+    m_path.addEllipse(QRect(m_opPoints.first(), m_opPoints.last() + QPoint(1, 1)));
 
     RectOpItem::updatePath();
 }

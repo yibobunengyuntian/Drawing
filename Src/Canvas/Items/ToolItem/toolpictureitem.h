@@ -2,7 +2,7 @@
 #define TOOLPICTUREITEM_H
 
 #include "rectopitem.h"
-#include <QPixmap>>
+#include <QPixmap>
 
 class ToolPictureItem : public RectOpItem
 {

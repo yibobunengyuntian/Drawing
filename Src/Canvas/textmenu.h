@@ -73,7 +73,6 @@ public:
         if (QFontDatabase::hasFamily(fontFamily) && isFontSupportChinese(fontFamily)) {
             font = QFont(fontFamily, 10);
         } else {
-            // 如果不支持中文，使用默认字体但显示特殊标记
             font = QFont("微软雅黑", 10);
         }
 
@@ -100,6 +99,8 @@ public:
 
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
     {
+        Q_UNUSED(option)
+        Q_UNUSED(index)
         return QSize(250, 30);
     }
 

@@ -1,31 +1,8 @@
 #include "canvascommand.h"
 #include "canvas.h"
 
-CanvasCommand::CanvasCommand(Canvas* canvas, const QPixmap& oldPixmap, const QPixmap& newPixmap)
-    : m_canvas(canvas), m_oldPixmap(oldPixmap), m_newPixmap(newPixmap)
-{
-}
-
-CanvasCommand::~CanvasCommand()
-{
-}
-
-void CanvasCommand::undo()
-{
-    if (m_canvas) {
-        m_canvas->restorePixmap(m_oldPixmap);
-    }
-}
-
-void CanvasCommand::redo()
-{
-    if (m_canvas) {
-        m_canvas->restorePixmap(m_newPixmap);
-    }
-}
-
-DrawingCommand::DrawingCommand(Canvas* canvas, const QPixmap& before, const QPixmap& after)
-    : m_canvas(canvas), m_before(before), m_after(after)
+DrawingCommand::DrawingCommand(Canvas* canvas, const QPixmap& before, const QPixmap& after, const QPoint &pos)
+    : m_canvas(canvas), m_before(before), m_after(after), m_pos(pos)
 {
     setText("Drawing");
 }
@@ -33,13 +10,13 @@ DrawingCommand::DrawingCommand(Canvas* canvas, const QPixmap& before, const QPix
 void DrawingCommand::undo()
 {
     if (m_canvas) {
-        m_canvas->restorePixmap(m_before);
+        m_canvas->drawingPixmap(m_before, m_pos);
     }
 }
 
 void DrawingCommand::redo()
 {
     if (m_canvas) {
-        m_canvas->restorePixmap(m_after);
+        m_canvas->drawingPixmap(m_after, m_pos);
     }
 }
