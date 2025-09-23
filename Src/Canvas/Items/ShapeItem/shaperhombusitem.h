@@ -3,6 +3,7 @@
 
 #include "rectopitem.h"
 
+// 菱形
 class ShapeRhombusItem: public RectOpItem
 {
 public:

@@ -18,11 +18,12 @@ signals:
     void colorChanged(const QColor &color);
 
 protected:
-    void mousePressEvent(QMouseEvent *event) override;
-    void paintEvent(QPaintEvent *event) override;
-
+    virtual void mousePressEvent(QMouseEvent *event) override;
+    virtual void paintEvent(QPaintEvent *event) override;
+    virtual void resizeEvent(QResizeEvent *event) override;
 private:
     QColor m_color = Qt::black;
+    QPixmap m_gridPixmap;
 };
 
 #endif // COLORBUTTON_H

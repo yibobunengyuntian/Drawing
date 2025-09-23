@@ -26,10 +26,10 @@ public:
 protected:
     void initialize();
 
-    void mousePressEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void mouseReleaseEvent(QMouseEvent* event) override;
-    void paintEvent(QPaintEvent *event) override;
+    virtual void mousePressEvent(QMouseEvent* event) override;
+    virtual void mouseMoveEvent(QMouseEvent* event) override;
+    virtual void mouseReleaseEvent(QMouseEvent* event) override;
+    virtual void paintEvent(QPaintEvent *event) override;
 
 protected slots:
     void updateItem();

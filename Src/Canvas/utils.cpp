@@ -9,7 +9,7 @@ QPointF Utils::rotate(const QPointF &p, const float &angle, const QPointF &base)
     return l.p2();
 }
 
-QPixmap Utils::replaceOpaqueColorWithPainter(const QPixmap &inputPixmap, const QColor &newColor)
+QPixmap Utils::replaceOpaqueColor(const QPixmap &inputPixmap, const QColor &newColor)
 {
     if (inputPixmap.isNull()) {
         return QPixmap();
@@ -36,15 +36,12 @@ QPixmap Utils::replaceOpaqueColorWithPainter(const QPixmap &inputPixmap, const Q
 
 bool Utils::isColorSimilar(QRgb color1, QRgb color2, int tolerance)
 {
-    if (tolerance == 0) return color1 == color2;
+    int alphaDiff = qAbs(qAlpha(color1) - qAlpha(color2));
+    int redDiff = qAbs(qRed(color1) - qRed(color2));
+    int greenDiff = qAbs(qGreen(color1) - qGreen(color2));
+    int blueDiff = qAbs(qBlue(color1) - qBlue(color2));
 
-    int rDiff = qAbs(qRed(color1) - qRed(color2));
-    int gDiff = qAbs(qGreen(color1) - qGreen(color2));
-    int bDiff = qAbs(qBlue(color1) - qBlue(color2));
-    int aDiff = qAbs(qAlpha(color1) - qAlpha(color2));
-
-    return (rDiff <= tolerance && gDiff <= tolerance &&
-            bDiff <= tolerance && aDiff <= tolerance);
+    return (alphaDiff + redDiff + greenDiff + blueDiff) <= tolerance;
 }
 
 QString Utils::imageToBase64(const QImage &image)

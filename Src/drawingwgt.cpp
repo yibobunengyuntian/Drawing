@@ -7,6 +7,11 @@ DrawingWgt::DrawingWgt(QWidget *parent)
     initialize();
 }
 
+bool DrawingWgt::isSaved()
+{
+    return m_pCanvas->isSaved();
+}
+
 void DrawingWgt::initialize()
 {
     setMouseTracking(true);
@@ -31,6 +36,8 @@ void DrawingWgt::initialize()
     connect(m_pCanvas, SIGNAL(mouseMove(QString)), this, SIGNAL(mouseMove(QString)));
     connect(m_pCanvas, SIGNAL(showSelectedRect(QString)), this, SIGNAL(showSelectedRect(QString)));
     connect(m_pCanvas, SIGNAL(canvasSizeChanged(QString)), this, SIGNAL(canvasSizeChanged(QString)));
+    connect(m_pCanvas, SIGNAL(canUndoChanged(bool)), this, SIGNAL(canUndoChanged(bool)));
+    connect(m_pCanvas, SIGNAL(canRedoChanged(bool)), this, SIGNAL(canRedoChanged(bool)));
 
     m_pOverlay = new OverlayWidget(this);
     m_w = m_pCanvas->width();

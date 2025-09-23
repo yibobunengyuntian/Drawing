@@ -10,8 +10,8 @@ class DrawingCommand : public QUndoCommand
 {
 public:
     DrawingCommand(Canvas* canvas, const QPixmap& before, const QPixmap& after, const QPoint &pos = QPoint(0, 0));
-    void undo() override;
-    void redo() override;
+    virtual void undo() override;
+    virtual void redo() override;
 
 private:
     Canvas* m_canvas;

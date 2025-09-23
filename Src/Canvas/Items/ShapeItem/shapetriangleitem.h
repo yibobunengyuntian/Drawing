@@ -3,6 +3,7 @@
 
 #include "rectopitem.h"
 
+// 三角形
 class ShapeTriangleItem: public RectOpItem
 {
 public:

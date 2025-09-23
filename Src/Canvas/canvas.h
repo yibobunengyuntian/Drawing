@@ -46,14 +46,7 @@ public:
     Canvas(QWidget *parent = nullptr);
     ~Canvas();
 
-    // 设置背景图片
-    void setCanvasBGPixmap(const QPixmap &pix);
-
-    // 设置背景颜色
-    void setCanvasBGColor(const QColor &color);
-
-    // 设置画布大小
-    void setCanvasSize(const int &w, const int &h);
+    bool isSaved();
 
     // 选择工具
     void setTool(const Tool &tool);
@@ -68,6 +61,17 @@ public:
         };
         this->setCursor(Qt::CrossCursor);
     }
+
+public slots:
+
+    // 设置背景图片
+    void setCanvasBGPixmap(const QPixmap &pix);
+
+    // 设置背景颜色
+    void setCanvasBGColor(const QColor &color);
+
+    // 设置画布大小
+    void setCanvasSize(const int &w, const int &h);
 
     // 设置笔的线宽
     void setPenSize(const int &size);
@@ -98,24 +102,28 @@ signals:
     void mouseMove(const QString &str);
     void showSelectedRect(const QString &str);
     void canvasSizeChanged(const QString &str);
+    void canUndoChanged(const bool &is);
+    void canRedoChanged(const bool &is);
 
 protected:
+    void initialize();
     void initCanvas();
     void undoStackPush();
     void drawingTool(const QPoint &pos);
     void drawingShape(const QPoint &pos);
     QRect fill();
 
-    void paintEvent(QPaintEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
-    void leaveEvent(QEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
+    virtual void paintEvent(QPaintEvent *event) override;
+    virtual void resizeEvent(QResizeEvent *event) override;
+    virtual void leaveEvent(QEvent *event) override;
+    virtual void mousePressEvent(QMouseEvent *event) override;
+    virtual void mouseReleaseEvent(QMouseEvent *event) override;
+    virtual void mouseMoveEvent(QMouseEvent *event) override;
 
 private:
     BgType m_bgType = FillColor;
     QColor m_bgColor = Qt::white;
+    QPixmap m_gridPixmap;
     QPixmap m_bgPixmap;
     QPixmap m_canvasPixmap;
     std::shared_ptr<QPainter> m_pPainter = nullptr;
@@ -126,9 +134,10 @@ private:
 
     bool m_isPress = false;
     bool m_isChanged = false;
+    bool m_isSaved = true;
     QPoint m_pressPos;
     QPoint m_lastPos;
-    QUndoStack m_undoStack;
+    QUndoStack *m_pUndoStack;
     QPixmap m_lastCanvasPixmap;
 
     QPainterPath m_currLinePath;

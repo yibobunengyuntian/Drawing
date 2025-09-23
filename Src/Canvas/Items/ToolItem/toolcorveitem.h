@@ -7,6 +7,7 @@
 
 #include "baseitem.h"
 
+// 曲线
 class ToolCorveItem: public BaseItem
 {
 public:

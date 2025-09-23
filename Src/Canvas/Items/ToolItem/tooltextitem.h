@@ -5,6 +5,7 @@
 #include <QFont>
 #include <QString>
 
+// 文本
 class ToolTextItem : public RectOpItem
 {
 public:

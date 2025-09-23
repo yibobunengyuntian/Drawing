@@ -448,13 +448,13 @@
           <widget class="QScrollArea" name="m_pSAreaShape">
            <property name="minimumSize">
             <size>
-             <width>180</width>
+             <width>250</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>180</width>
+             <width>250</width>
              <height>16777215</height>
             </size>
            </property>
@@ -469,7 +469,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>178</width>
+              <width>248</width>
               <height>63</height>
              </rect>
             </property>
@@ -481,12 +481,6 @@
            <property name="minimumSize">
             <size>
              <width>0</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>180</width>
              <height>20</height>
             </size>
            </property>

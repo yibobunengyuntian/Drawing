@@ -26,7 +26,7 @@ public:
     static QPointF rotate(const QPointF &p, const float &angle, const QPointF &base);
 
     // 改变图片中不透明部分的颜色
-    static QPixmap replaceOpaqueColorWithPainter(const QPixmap& inputPixmap, const QColor& newColor);
+    static QPixmap replaceOpaqueColor(const QPixmap& inputPixmap, const QColor& newColor);
 
     // 颜色相似度判断
     static bool isColorSimilar(QRgb color1, QRgb color2, int tolerance);

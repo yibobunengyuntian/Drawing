@@ -4,6 +4,7 @@
 #include "rectopitem.h"
 #include <QPixmap>
 
+// 图片
 class ToolPictureItem : public RectOpItem
 {
 public:

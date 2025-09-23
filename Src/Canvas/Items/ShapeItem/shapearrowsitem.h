@@ -4,6 +4,7 @@
 #include "baseitem.h"
 #include <QVector2D>
 
+// 箭头
 class ShapeArrowsItem: public BaseItem
 {
 public:

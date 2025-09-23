@@ -8,20 +8,7 @@
 Canvas::Canvas(QWidget *parent)
     : QWidget(parent)
 {
-    setMouseTracking(true);
-
-    this->setFixedSize(800, 600);
-    m_bgPixmap = QPixmap(this->size());
-    setCanvasBGColor(Qt::white);
-    initCanvas();
-    setTool(Pencil);
-
-    m_pen = QPen(Qt::black);
-    m_pen.setCapStyle(Qt::RoundCap);
-    m_pen.setJoinStyle(Qt::MiterJoin);
-    m_eraser =  QPen(Qt::transparent);
-    m_eraser.setCapStyle(Qt::RoundCap);
-    m_eraser.setJoinStyle(Qt::RoundJoin);
+    initialize();
 }
 
 Canvas::~Canvas()
@@ -40,19 +27,6 @@ void Canvas::initCanvas()
     m_pPainter->setRenderHint(QPainter::SmoothPixmapTransform, true);
     m_pPainter->setRenderHint(QPainter::TextAntialiasing, true);
 
-    if(m_pTextMenu == nullptr)
-    {
-        if(this->parentWidget())
-        {
-        m_pTextMenu = new TextMenu(this->parentWidget());
-        }
-        else
-        {
-            m_pTextMenu = new TextMenu(this);
-        }
-        m_pTextMenu->hide();
-    }
-
     update();
 }
 
@@ -69,12 +43,12 @@ void Canvas::undoStackPush()
         rect.setBottomRight(rect.bottomRight() + QPoint(m_eraser.width() + 10, m_eraser.width() + 10));
         rect = rect.intersected(m_canvasPixmap.rect());
         DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap.copy(rect), m_canvasPixmap.copy(rect), rect.topLeft());
-        m_undoStack.push(command);
+        m_pUndoStack->push(command);
     }
     else if (m_tool == Fill && m_dt == DT_Tool) {
         QRect rect = m_fillRect.intersected(m_canvasPixmap.rect());
         DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap.copy(rect), m_canvasPixmap.copy(rect), rect.topLeft());
-        m_undoStack.push(command);
+        m_pUndoStack->push(command);
     }
     else if (m_currDrawingItem) {
         QRect rect = m_currDrawingItem->boundingRect();
@@ -82,9 +56,10 @@ void Canvas::undoStackPush()
         rect.setBottomRight(rect.bottomRight() + QPoint(m_pen.width() + 10, m_pen.width() + 10));
         rect = rect.intersected(m_canvasPixmap.rect());
         DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap.copy(rect), m_canvasPixmap.copy(rect), rect.topLeft());
-        m_undoStack.push(command);
+        m_pUndoStack->push(command);
     }
     m_lastCanvasPixmap = QPixmap(); // 重置
+    m_isSaved = false;
 }
 
 void Canvas::drawingTool(const QPoint &pos)
@@ -119,7 +94,6 @@ void Canvas::drawingTool(const QPoint &pos)
         }
         m_currLinePath.lineTo(pos);
         m_pPainter->restore();
-        m_pPainter->setCompositionMode(QPainter::CompositionMode_SourceOver);
     }
         break;
     case Text:
@@ -172,9 +146,12 @@ QRect Canvas::fill()
 {
     QImage image = m_canvasPixmap.toImage();
     if (image.isNull()) return QRect();
+    if (image.format() != QImage::Format_ARGB32) {
+        image = image.convertToFormat(QImage::Format_ARGB32);
+    }
 
     QRgb oldColor = image.pixel(m_pressPos);
-    QRgb newColor = qRgba(m_fillColor.red(), m_fillColor.green(), m_fillColor.blue(), 255);
+    QRgb newColor = m_fillColor.rgba();
 
     if (oldColor == newColor) return QRect();
 
@@ -225,7 +202,10 @@ QRect Canvas::fill()
     }
 
     QRect boundingBox(minX, minY, maxX - minX + 1, maxY - minY + 1);
+    m_pPainter->save();
+    m_pPainter->setCompositionMode(QPainter::CompositionMode_Source);
     m_pPainter->drawImage(0, 0, image);
+    m_pPainter->restore();
     update();
 
     return boundingBox;
@@ -255,6 +235,7 @@ void Canvas::setCanvasSize(const int &w, const int &h)
     // setCanvasBGColor(m_bgColor);
 
     QPixmap pix = m_canvasPixmap;
+    m_canvasPixmap.scaled(w, h);
     initCanvas();
     m_pPainter->drawPixmap(0, 0, pix);
 }
@@ -267,7 +248,7 @@ void Canvas::setTool(const Tool &tool)
     QCursor cursor = Qt::ArrowCursor;
     switch (m_tool) {
     case Pencil:
-        cursor = QCursor(Utils::replaceOpaqueColorWithPainter(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/pencil.png"), m_pen.color()), 5, 28);
+        cursor = QCursor(Utils::replaceOpaqueColor(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/pencil.png"), m_pen.color()), 5, 28);
         break;
     case Eraser:
     {
@@ -275,7 +256,7 @@ void Canvas::setTool(const Tool &tool)
     }
         break;
     case Fill:
-        cursor = QCursor(Utils::replaceOpaqueColorWithPainter(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/fill.png"), m_fillColor), 26, 15);
+        cursor = QCursor(Utils::replaceOpaqueColor(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/fill.png"), m_fillColor), 26, 15);
         break;
     case Text:
         cursor = Qt::CrossCursor;
@@ -353,13 +334,13 @@ void Canvas::cancelSelected()
 
 void Canvas::undo()
 {
-    m_undoStack.undo();
+    m_pUndoStack->undo();
     update();
 }
 
 void Canvas::redo()
 {
-    m_undoStack.redo();
+    m_pUndoStack->redo();
     update();
 }
 
@@ -379,6 +360,7 @@ QVariantMap Canvas::save()
     QVariantMap data;
     data.insert("canvasPixmap", Utils::imageToBase64(m_canvasPixmap.toImage()));
     data.insert("bgPixmap", Utils::imageToBase64(m_bgPixmap.toImage()));
+    m_isSaved = true;
     return data;
 }
 
@@ -395,6 +377,7 @@ void Canvas::load(const QVariantMap &data)
     initCanvas();
     m_pPainter->drawPixmap(0, 0, pix);
     clearUndoStack();
+    m_isSaved = true;
     update();
 }
 
@@ -416,8 +399,45 @@ void Canvas::drawingPixmap(const QPixmap &pixmap, const QPoint &pos)
 
 void Canvas::clearUndoStack()
 {
-    m_undoStack.clear();
+    m_pUndoStack->clear();
     m_lastCanvasPixmap = QPixmap();
+}
+
+bool Canvas::isSaved()
+{
+    return m_isSaved;
+}
+
+void Canvas::initialize()
+{
+    setMouseTracking(true);
+
+    this->setFixedSize(800, 600);
+    m_pUndoStack = new QUndoStack(this);
+    m_bgPixmap = QPixmap(this->size());
+    setCanvasBGColor(Qt::white);
+    initCanvas();
+    setTool(Pencil);
+
+    m_pen = QPen(Qt::black);
+    m_pen.setCapStyle(Qt::RoundCap);
+    m_pen.setJoinStyle(Qt::MiterJoin);
+    m_eraser =  QPen(Qt::transparent);
+    m_eraser.setCapStyle(Qt::RoundCap);
+    m_eraser.setJoinStyle(Qt::RoundJoin);
+
+    if(this->parentWidget())
+    {
+        m_pTextMenu = new TextMenu(this->parentWidget());
+    }
+    else
+    {
+        m_pTextMenu = new TextMenu(this);
+    }
+    m_pTextMenu->hide();
+
+    connect(m_pUndoStack, SIGNAL(canUndoChanged(bool)), this, SIGNAL(canUndoChanged(bool)));
+    connect(m_pUndoStack, SIGNAL(canRedoChanged(bool)), this, SIGNAL(canRedoChanged(bool)));
 }
 
 void Canvas::paintEvent(QPaintEvent *event)
@@ -438,7 +458,8 @@ void Canvas::paintEvent(QPaintEvent *event)
 
     painter.setClipRect(0, 0, w, h);
 
-    // 居中绘制
+    painter.drawPixmap(0, 0, w, h, m_gridPixmap);
+
     painter.drawPixmap(0, 0, w, h, m_bgPixmap);
 
     painter.drawPixmap(0, 0, w, h, m_canvasPixmap);
@@ -455,6 +476,21 @@ void Canvas::paintEvent(QPaintEvent *event)
 void Canvas::resizeEvent(QResizeEvent *event)
 {
     Q_UNUSED(event)
+    m_gridPixmap = QPixmap(this->size());
+    QPainter painter(&m_gridPixmap);;
+    int gridSize = 20; // 每个格子的大小
+    int w = this->width();
+    int h = this->height();
+    for (int y = 0; y < h; y += gridSize) {
+        for (int x = 0; x < w; x += gridSize) {
+            // 判断当前格子位置，决定颜色
+            bool isLight = ((x / gridSize) % 2) ^ ((y / gridSize) % 2);
+            QColor color = isLight ? QColor(240, 240, 240) : QColor(200, 200, 200);
+
+            painter.fillRect(x, y, gridSize, gridSize, color);
+        }
+    }
+
     emit canvasSizeChanged(QString("%1 × %2 像素").arg(this->width()).arg(this->height()));
 }
 

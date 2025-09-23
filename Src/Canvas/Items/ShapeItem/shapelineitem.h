@@ -3,6 +3,7 @@
 
 #include "baseitem.h"
 
+// 直线
 class ShapeLineItem: public BaseItem
 {
 public:

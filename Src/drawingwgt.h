@@ -36,7 +36,7 @@ public:
     }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    virtual void paintEvent(QPaintEvent*) override {
         QPainter painter(this);
         QPen pen(Qt::black);
 
@@ -76,6 +76,8 @@ public:
         m_pCanvas->setDrawingShape<DrawingItemType>();
     }
 
+    bool isSaved();
+
 protected:
     void initialize();
 
@@ -83,6 +85,8 @@ signals:
     void mouseMove(const QString &str);
     void showSelectedRect(const QString &str);
     void canvasSizeChanged(const QString &str);
+    void canUndoChanged(const bool &is);
+    void canRedoChanged(const bool &is);
 
 public slots:
     void setDrawingTool(const Canvas::Tool &tool)
@@ -139,12 +143,12 @@ public slots:
     }
 
 protected:
-    void paintEvent(QPaintEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
+    virtual void paintEvent(QPaintEvent *event) override;
+    virtual void resizeEvent(QResizeEvent *event) override;
 
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
+    virtual void mousePressEvent(QMouseEvent *event) override;
+    virtual void mouseReleaseEvent(QMouseEvent *event) override;
+    virtual void mouseMoveEvent(QMouseEvent *event) override;
 
 private:
     Canvas *m_pCanvas = nullptr;

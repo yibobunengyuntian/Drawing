@@ -11,6 +11,11 @@
 #include "shapepentagonitem.h"
 #include "shapehexagonitem.h"
 #include "shapearrowsitem.h"
+#include "shapearrowsrightitem.h"
+#include "shapearrowsleftitem.h"
+#include "shapearrowsupitem.h"
+#include "shapearrowsdownitem.h"
+#include "shaperoundedrectlabelitem.h"
 
 MainWin::MainWin(QWidget *parent)
     : QWidget(parent)
@@ -36,6 +41,11 @@ void MainWin::initialize()
     registerShapeItem<ShapePentagonItem>("五边形");
     registerShapeItem<ShapeHexagonItem>("六边形");
     registerShapeItem<ShapeArrowsItem>("箭头");
+    registerShapeItem<ShapeArrowsLeftItem>("向左箭头");
+    registerShapeItem<ShapeArrowsRightItem>("向右箭头");
+    registerShapeItem<ShapeArrowsUpItem>("向上箭头");
+    registerShapeItem<ShapeArrowsDownItem>("向下箭头");
+    registerShapeItem<ShapeRoundedRectLabelItem>("圆角矩形标注");
 
     m_pLabelPosIcon->setPixmap(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/mousePos.png"));
     m_pLabelSelectedRectIcon->setPixmap(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/selectedRect.png"));
@@ -56,6 +66,8 @@ void MainWin::initialize()
     m_pBtnExport->setShortcut(QKeySequence("Ctrl+E"));
     m_pBtnUndo->setShortcut(QKeySequence("Ctrl+Z"));
     m_pBtnRedo->setShortcut(QKeySequence("Ctrl+Y"));
+    m_pBtnUndo->setEnabled(false);
+    m_pBtnRedo->setEnabled(false);
 
     m_pBtnPencil->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/pencil.png"));
     m_pBtnEraser->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/eraser.png"));
@@ -79,6 +91,11 @@ void MainWin::initialize()
     m_pBtnDrawingGroup->addButton(m_pBtnText);
     m_pBtnDrawingGroup->addButton(m_pBtnPicture);
 
+    m_pLabelLineSize->setText(QString::number(m_pSliderLineSize->value()));
+    m_pLabelEraserSize->setText(QString::number(m_pSliderEraserSize->value()));
+    m_pDrawingWet->setPenSize(m_pSliderLineSize->value());
+    m_pDrawingWet->setEraserSize(m_pSliderEraserSize->value());
+
     foreach (auto btn, m_pMenuWgt->findChildren<QAbstractButton*>()) {
         connect(btn, &QAbstractButton::pressed, this, [=](){
             m_pDrawingWet->cancelSelected();
@@ -98,6 +115,12 @@ void MainWin::initialize()
     connect(m_pBtnBgColor, SIGNAL(colorChanged(QColor)), m_pDrawingWet, SLOT(setCanvasBGColor(QColor)));
     connect(m_pBtnUndo, SIGNAL(clicked(bool)), m_pDrawingWet, SLOT(undo()));
     connect(m_pBtnRedo, SIGNAL(clicked(bool)), m_pDrawingWet, SLOT(redo()));
+    connect(m_pDrawingWet, SIGNAL(canUndoChanged(bool)), m_pBtnUndo, SLOT(setEnabled(bool)));
+    connect(m_pDrawingWet, SIGNAL(canRedoChanged(bool)), m_pBtnRedo, SLOT(setEnabled(bool)));
+    connect(m_pBtnBgPicture, SIGNAL(clicked(bool)), this, SLOT(onSelectedBgPicture()));
+    connect(m_pBtnExport, SIGNAL(clicked(bool)), this, SLOT(onExport()));
+    connect(m_pBtnOpen, SIGNAL(clicked(bool)), this, SLOT(onOpen()));
+    connect(m_pBtnSave, SIGNAL(clicked(bool)), this, SLOT(onSave()));
     connect(m_pBtnPencil, &QPushButton::clicked, this, [=](){
         m_pDrawingWet->setDrawingTool(Canvas::Pencil);
     });
@@ -117,72 +140,7 @@ void MainWin::initialize()
         m_pBtnBgColor->setHidden(index != 0);
         m_pBtnBgPicture->setHidden(index != 1);
     });
-    connect(m_pBtnBgPicture, &QPushButton::clicked, this, [=](){
-        QString fileName = QFileDialog::getOpenFileName(
-            this,
-            "选择图片",
-            QDir::homePath(),
-            "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
-            );
-        if(!fileName.isEmpty())
-        {
-            m_pDrawingWet->setCanvasBGPixmap(QPixmap(fileName));
-        }
-    });
 
-    connect(m_pBtnExport, &QPushButton::clicked, this, [=](){
-        QString fileName = QFileDialog::getSaveFileName(
-            this,
-            "导出图片",
-            QDir::homePath(),
-            "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
-            );
-        if(!fileName.isEmpty())
-        {
-            m_pDrawingWet->exportPixmap().save(fileName);
-        }
-    });
-
-    connect(m_pBtnOpen, &QPushButton::clicked, this, [=](){
-        QString fileName = QFileDialog::getOpenFileName(
-            this,
-            "打开图纸",
-            QDir::homePath(),
-            "图纸文件 (*.drawing)"
-            );
-        if(!fileName.isEmpty())
-        {
-            QVariantList vList = Utils::readJson(fileName);
-            if(!vList.isEmpty())
-            {
-                m_pDrawingWet->load(vList.first().toMap());
-            }
-            m_savePath = fileName;
-        }
-    });
-
-    connect(m_pBtnSave, &QPushButton::clicked, this, [=](){
-        if(m_savePath.isEmpty())
-        {
-            m_savePath = QFileDialog::getSaveFileName(
-                this,
-                "保存图纸",
-                QDir::homePath(),
-                "图纸文件 (*.drawing)"
-                );
-        }
-        if(!m_savePath.isEmpty())
-        {
-            QVariantList vList;
-            vList.append(m_pDrawingWet->save());
-            Utils::writeJson(vList, m_savePath);
-        }
-    });
-
-    m_pLabelLineSize->setText(QString::number(m_pSliderLineSize->value()));
-    m_pLabelEraserSize->setText(QString::number(m_pSliderEraserSize->value()));
-    m_pDrawingWet->setPenSize(m_pSliderLineSize->value());
-    m_pDrawingWet->setEraserSize(m_pSliderEraserSize->value());
     connect(m_pSliderLineSize, &QSlider::valueChanged, this, [=](int value){
         m_pLabelLineSize->setText(QString::number(value));
         m_pDrawingWet->setPenSize(value);
@@ -192,6 +150,155 @@ void MainWin::initialize()
         m_pDrawingWet->setEraserSize(value);
     });
 
+}
+
+void MainWin::closeEvent(QCloseEvent *event)
+{
+    if(!m_pDrawingWet->isSaved())
+    {
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle("未保存的更改");
+        msgBox.setText("图纸已修改，是否保存？");
+        // msgBox.setIcon(QMessageBox::Question);
+        msgBox.setStyleSheet("QMessageBox { background-color: #f0f0f0; }");
+
+        QPushButton *saveButton = msgBox.addButton("保存", QMessageBox::AcceptRole);
+        QPushButton *discardButton = msgBox.addButton("不保存", QMessageBox::DestructiveRole);
+        QPushButton *cancelButton = msgBox.addButton("取消", QMessageBox::RejectRole);
+
+        msgBox.setDefaultButton(saveButton);
+        msgBox.setEscapeButton(cancelButton);
+
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == saveButton)
+        {
+            if(onSave())
+            {
+                event->accept();
+            }
+            else
+            {
+                event->ignore();
+            }
+        } else if (msgBox.clickedButton() == discardButton)
+        {
+            event->accept();
+        } else
+        {
+            event->ignore();
+        }
+    }
+}
+
+bool MainWin::onSave()
+{
+    if(m_savePath.isEmpty())
+    {
+        m_savePath = QFileDialog::getSaveFileName(
+            this,
+            "保存图纸",
+            QDir::homePath(),
+            "图纸文件 (*.drawing)"
+            );
+    }
+    if(!m_savePath.isEmpty())
+    {
+        QVariantList vList;
+        vList.append(m_pDrawingWet->save());
+        Utils::writeJson(vList, m_savePath);
+        return true;
+    }
+    return false;
+}
+
+bool MainWin::onOpen()
+{
+    if(!m_pDrawingWet->isSaved())
+    {
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle("未保存的更改");
+        msgBox.setText("图纸已修改，是否保存？");
+        // msgBox.setIcon(QMessageBox::Question);
+        msgBox.setStyleSheet("QMessageBox { background-color: #f0f0f0; }");
+
+        QPushButton *saveButton = msgBox.addButton("保存", QMessageBox::AcceptRole);
+        QPushButton *discardButton = msgBox.addButton("不保存", QMessageBox::DestructiveRole);
+        QPushButton *cancelButton = msgBox.addButton("取消", QMessageBox::RejectRole);
+
+        msgBox.setDefaultButton(saveButton);
+        msgBox.setEscapeButton(cancelButton);
+
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == saveButton)
+        {
+            if(onSave())
+            {
+
+            }
+            else
+            {
+                return false;
+            }
+        } else if (msgBox.clickedButton() == discardButton)
+        {
+
+        } else
+        {
+            return false;
+        }
+    }
+
+    QString fileName = QFileDialog::getOpenFileName(
+        this,
+        "打开图纸",
+        QDir::homePath(),
+        "图纸文件 (*.drawing)"
+        );
+    if(!fileName.isEmpty())
+    {
+        QVariantList vList = Utils::readJson(fileName);
+        if(!vList.isEmpty())
+        {
+            m_pDrawingWet->load(vList.first().toMap());
+        }
+        m_savePath = fileName;
+        return true;
+    }
+    return false;
+}
+
+bool MainWin::onExport()
+{
+    QString fileName = QFileDialog::getSaveFileName(
+        this,
+        "导出图片",
+        QDir::homePath(),
+        "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
+        );
+    if(!fileName.isEmpty())
+    {
+        m_pDrawingWet->exportPixmap().save(fileName);
+        return true;
+    }
+    return false;
+}
+
+bool MainWin::onSelectedBgPicture()
+{
+    QString fileName = QFileDialog::getOpenFileName(
+        this,
+        "选择图片",
+        QDir::homePath(),
+        "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
+        );
+    if(!fileName.isEmpty())
+    {
+        m_pDrawingWet->setCanvasBGPixmap(QPixmap(fileName));
+        return true;
+    }
+    return false;
 }
 
 template<typename ShapeItemType>

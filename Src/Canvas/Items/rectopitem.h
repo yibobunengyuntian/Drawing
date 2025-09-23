@@ -3,6 +3,7 @@
 
 #include "baseitem.h"
 
+// 操作框为矩形的图形通用基类
 class RectOpItem: public BaseItem
 {
 public:
