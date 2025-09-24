@@ -2,7 +2,7 @@
 
 
 
-## 百度网盘：（bin目录含打包好的exe应用程序及场景）：https://pan.baidu.com/s/1bU_n2MgwcTnWFUjImUVoKg?pwd=1008
+## 百度网盘：https://pan.baidu.com/s/1bU_n2MgwcTnWFUjImUVoKg?pwd=1008
 
 
 
