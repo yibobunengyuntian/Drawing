@@ -8,9 +8,11 @@
 class ToolPictureItem : public RectOpItem
 {
 public:
-    ToolPictureItem(const QPoint &startPoint, const QPoint &endPoint, const QPixmap &pixmap);
+    ToolPictureItem(const QPoint &startPoint, const QPoint &endPoint, const QPixmap &pixmap = QPixmap());
 
     virtual void paint(QPainter *painter, bool isShowOP = false) override;
+
+    void setPicture(const QPixmap &pixmap);
 
 
 protected:

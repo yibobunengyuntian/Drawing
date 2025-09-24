@@ -37,6 +37,11 @@ void ToolPictureItem::paint(QPainter *painter, bool isShowOP)
     painter->restore();
 }
 
+void ToolPictureItem::setPicture(const QPixmap &pixmap)
+{
+    m_pixmap = pixmap;
+}
+
 void ToolPictureItem::updatePath()
 {
     m_path.clear();

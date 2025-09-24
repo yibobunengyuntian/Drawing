@@ -40,7 +40,8 @@ public:
         Eraser,     // 橡皮
         Fill,       // 填充
         Text,       // 文本
-        Picture     // 图片
+        Picture,    // 图片
+        Select      // 选择
     };
 
     Canvas(QWidget *parent = nullptr);
@@ -113,6 +114,8 @@ protected:
     void drawingShape(const QPoint &pos);
     QRect fill();
 
+    void endDrawing();
+
     virtual void paintEvent(QPaintEvent *event) override;
     virtual void resizeEvent(QResizeEvent *event) override;
     virtual void leaveEvent(QEvent *event) override;
@@ -134,6 +137,7 @@ private:
 
     bool m_isPress = false;
     bool m_isChanged = false;
+    bool m_isDrawing = false;
     bool m_isSaved = true;
     QPoint m_pressPos;
     QPoint m_lastPos;
@@ -150,6 +154,7 @@ private:
 
     TextMenu *m_pTextMenu = nullptr;
     QPixmap m_picture;
+    QRect m_selectRect;
 };
 
 #endif // CANVAS_H

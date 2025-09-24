@@ -50,6 +50,14 @@ void Canvas::undoStackPush()
         DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap.copy(rect), m_canvasPixmap.copy(rect), rect.topLeft());
         m_pUndoStack->push(command);
     }
+    else if (m_tool == Select && m_dt == DT_Tool) {
+        QRect rect = m_currDrawingItem->boundingRect().united(m_selectRect);
+        rect.setTopLeft(rect.topLeft() - QPoint(m_pen.width() + 10, m_pen.width() + 10));
+        rect.setBottomRight(rect.bottomRight() + QPoint(m_pen.width() + 10, m_pen.width() + 10));
+        rect = rect.intersected(m_canvasPixmap.rect());
+         DrawingCommand* command = new DrawingCommand(this, m_lastCanvasPixmap.copy(rect), m_canvasPixmap.copy(rect), rect.topLeft());
+        m_pUndoStack->push(command);
+    }
     else if (m_currDrawingItem) {
         QRect rect = m_currDrawingItem->boundingRect();
         rect.setTopLeft(rect.topLeft() - QPoint(m_pen.width() + 10, m_pen.width() + 10));
@@ -115,14 +123,27 @@ void Canvas::drawingTool(const QPoint &pos)
     {
         if(!m_currDrawingItem)
         {
-            auto pictureItem = std::make_shared<ToolPictureItem>(m_pressPos, pos, m_picture);
-            m_currDrawingItem = pictureItem;
+            m_currDrawingItem = std::make_shared<ToolPictureItem>(m_pressPos, pos, m_picture);
         }
         else {
             m_currDrawingItem->drawing(m_pressPos, pos);
         }
     }
         break;
+    case Select:
+    {
+        QPoint point = QPoint(qMin(qMax(pos.x(), 0), this->width() - 1), qMin(qMax(pos.y(), 0), this->height() - 1));
+        if(!m_currDrawingItem)
+        {
+            m_currDrawingItem = std::make_shared<ToolPictureItem>(m_pressPos, point);
+        }
+        else {
+            m_currDrawingItem->drawing(m_pressPos, point);
+        }
+        QPixmap pic = m_canvasPixmap.copy(m_currDrawingItem->boundingRect());
+        std::static_pointer_cast<ToolPictureItem>(m_currDrawingItem)->setPicture(pic);
+    }
+    break;
     default:
         break;
     }
@@ -211,6 +232,22 @@ QRect Canvas::fill()
     return boundingBox;
 }
 
+void Canvas::endDrawing()
+{
+    if(m_tool == Pencil && m_dt == DT_Tool) {
+        cancelSelected();
+    }
+    if(m_tool == Select && m_dt == DT_Tool && m_currDrawingItem) {
+        QPixmap pic(m_currDrawingItem->boundingRect().size());
+        pic.fill(Qt::transparent);
+        m_pPainter->save();
+        m_pPainter->setCompositionMode(QPainter::CompositionMode_Source);
+        m_pPainter->drawPixmap(m_currDrawingItem->boundingRect(), pic);
+        m_pPainter->restore();
+        m_selectRect = m_currDrawingItem->boundingRect();
+    }
+}
+
 void Canvas::setCanvasBGPixmap(const QPixmap &pix)
 {
     if(pix.isNull())
@@ -219,20 +256,26 @@ void Canvas::setCanvasBGPixmap(const QPixmap &pix)
     }
     m_bgType = Pixmap;
     m_bgPixmap = pix;
+    m_isSaved = false;
+    update();
 }
 
 void Canvas::setCanvasBGColor(const QColor &color)
 {
     m_bgType = FillColor;
+    if(m_bgColor == color)
+    {
+        return;
+    }
     m_bgColor = color;
-    m_bgPixmap.fill(color);
+    m_bgPixmap.fill(m_bgColor);
+    m_isSaved = false;
     update();
 }
 
 void Canvas::setCanvasSize(const int &w, const int &h)
 {
     this->setFixedSize(w, h);
-    // setCanvasBGColor(m_bgColor);
 
     QPixmap pix = m_canvasPixmap;
     m_canvasPixmap.scaled(w, h);
@@ -268,14 +311,18 @@ void Canvas::setTool(const Tool &tool)
         QString fileName = QFileDialog::getOpenFileName(
             this,
             "选择图片",
-            QDir::homePath(),
+            Utils::readConfig(QApplication::applicationDirPath() + "/ini.cfg", "pictureDir").toString(),
             "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
             );
         if(!fileName.isEmpty())
         {
             m_picture.load(fileName);
+            Utils::writeConfig(QApplication::applicationDirPath() + "/ini.cfg", "pictureDir", QFileInfo(fileName).dir().path());
         }
     }
+        break;
+    case Select:
+        cursor = Qt::CrossCursor;
         break;
     default:
         break;
@@ -415,7 +462,7 @@ void Canvas::initialize()
     this->setFixedSize(800, 600);
     m_pUndoStack = new QUndoStack(this);
     m_bgPixmap = QPixmap(this->size());
-    setCanvasBGColor(Qt::white);
+    m_bgPixmap.fill(m_bgColor);
     initCanvas();
     setTool(Pencil);
 
@@ -447,11 +494,6 @@ void Canvas::paintEvent(QPaintEvent *event)
     // painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
-
-    if (m_bgPixmap.isNull())
-    {
-        // return;
-    }
 
     int w = this->width();
     int h = this->height();
@@ -507,19 +549,24 @@ void Canvas::mousePressEvent(QMouseEvent *event)
     m_lastPos = event->pos();
     m_pPainter->setPen(m_pen);
 
-    // 保存操作前的状态
-    m_lastCanvasPixmap = m_canvasPixmap;
-
     m_currLinePath.clear();
 
-    if(m_currDrawingItem) {
-        if(!m_currDrawingItem->selectedOpPoint(m_pressPos)) {
+    if(m_currDrawingItem)
+    {
+        if(!m_currDrawingItem->selectedOpPoint(m_pressPos))
+        {
             cancelSelected();
         } else {
             m_isSelectedOp = true;
         }
     }
-    if(m_dt == DT_Tool && m_tool == Fill) {
+    else
+    {
+        m_lastCanvasPixmap = m_canvasPixmap;
+    }
+
+    if(m_dt == DT_Tool && m_tool == Fill)
+    {
         m_fillRect = fill();
         undoStackPush(); // 填充操作立即提交
     }
@@ -532,8 +579,11 @@ void Canvas::mouseReleaseEvent(QMouseEvent *event)
     m_isPress = false;
     m_isSelectedOp = false;
 
-    if(m_tool == Pencil && m_dt == DT_Tool) {
-        cancelSelected();
+
+    if(m_isDrawing)
+    {
+        endDrawing();
+        m_isDrawing = false;
     }
 
     if(m_isChanged) {
@@ -557,6 +607,7 @@ void Canvas::mouseMoveEvent(QMouseEvent *event)
         emit showSelectedRect("");
     }
 
+    m_isDrawing = false;
     if(m_isPress)
     {
         if(m_dt == DT_Tool && m_tool == Eraser)
@@ -570,6 +621,7 @@ void Canvas::mouseMoveEvent(QMouseEvent *event)
         }
         else
         {
+            m_isDrawing = true;
             if(m_dt == DT_Shape)
             {
                 drawingShape(currPos);

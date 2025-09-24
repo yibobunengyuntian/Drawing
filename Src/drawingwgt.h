@@ -140,6 +140,9 @@ public slots:
     void load(const QVariantMap &data)
     {
         m_pCanvas->load(data);
+        m_w = m_pCanvas->width();
+        m_h = m_pCanvas->height();
+        resizeEvent(nullptr);
     }
 
 protected:

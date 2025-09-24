@@ -74,11 +74,13 @@ void MainWin::initialize()
     m_pBtnFill->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/fill.png"));
     m_pBtnText->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/text.png"));
     m_pBtnPicture->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/picture.png"));
+    m_pBtnSelect->setIcon(QPixmap(QApplication::applicationDirPath() + "/Resources/icons/select.png"));
     m_pBtnPencil->setToolTip("铅笔");
     m_pBtnEraser->setToolTip("橡皮");
     m_pBtnFill->setToolTip("填充");
     m_pBtnText->setToolTip("文本");
     m_pBtnPicture->setToolTip("图片");
+    m_pBtnSelect->setToolTip("选择");
     m_pBtnPencil->setChecked(true);
 
     m_pBgType->addItems(QStringList() << "颜色" << "图片");
@@ -90,6 +92,7 @@ void MainWin::initialize()
     m_pBtnDrawingGroup->addButton(m_pBtnFill);
     m_pBtnDrawingGroup->addButton(m_pBtnText);
     m_pBtnDrawingGroup->addButton(m_pBtnPicture);
+    m_pBtnDrawingGroup->addButton(m_pBtnSelect);
 
     m_pLabelLineSize->setText(QString::number(m_pSliderLineSize->value()));
     m_pLabelEraserSize->setText(QString::number(m_pSliderEraserSize->value()));
@@ -135,6 +138,9 @@ void MainWin::initialize()
     });
     connect(m_pBtnPicture, &QPushButton::clicked, this, [=](){
         m_pDrawingWet->setDrawingTool(Canvas::Picture);
+    });
+    connect(m_pBtnSelect, &QPushButton::clicked, this, [=](){
+        m_pDrawingWet->setDrawingTool(Canvas::Select);
     });
     connect(m_pBgType, &QComboBox::currentIndexChanged, this, [=](int index){
         m_pBtnBgColor->setHidden(index != 0);
@@ -198,7 +204,7 @@ bool MainWin::onSave()
         m_savePath = QFileDialog::getSaveFileName(
             this,
             "保存图纸",
-            QDir::homePath(),
+            Utils::readConfig(QApplication::applicationDirPath() + "/ini.cfg", "saveDir").toString(),
             "图纸文件 (*.drawing)"
             );
     }
@@ -207,6 +213,7 @@ bool MainWin::onSave()
         QVariantList vList;
         vList.append(m_pDrawingWet->save());
         Utils::writeJson(vList, m_savePath);
+        Utils::writeConfig(QApplication::applicationDirPath() + "/ini.cfg", "saveDir", QFileInfo(m_savePath).dir().path());
         return true;
     }
     return false;
@@ -253,7 +260,7 @@ bool MainWin::onOpen()
     QString fileName = QFileDialog::getOpenFileName(
         this,
         "打开图纸",
-        QDir::homePath(),
+        Utils::readConfig(QApplication::applicationDirPath() + "/ini.cfg", "saveDir").toString(),
         "图纸文件 (*.drawing)"
         );
     if(!fileName.isEmpty())
@@ -274,12 +281,13 @@ bool MainWin::onExport()
     QString fileName = QFileDialog::getSaveFileName(
         this,
         "导出图片",
-        QDir::homePath(),
+        Utils::readConfig(QApplication::applicationDirPath() + "/ini.cfg", "exportDir").toString(),
         "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
         );
     if(!fileName.isEmpty())
     {
         m_pDrawingWet->exportPixmap().save(fileName);
+        Utils::writeConfig(QApplication::applicationDirPath() + "/ini.cfg", "exportDir", QFileInfo(fileName).dir().path());
         return true;
     }
     return false;
@@ -290,12 +298,13 @@ bool MainWin::onSelectedBgPicture()
     QString fileName = QFileDialog::getOpenFileName(
         this,
         "选择图片",
-        QDir::homePath(),
+        Utils::readConfig(QApplication::applicationDirPath() + "/ini.cfg", "pictureDir").toString(),
         "图片文件 (*.png *.jpg *.jpeg *.bmp *.gif)"
         );
     if(!fileName.isEmpty())
     {
         m_pDrawingWet->setCanvasBGPixmap(QPixmap(fileName));
+        Utils::writeConfig(QApplication::applicationDirPath() + "/ini.cfg", "pictureDir", QFileInfo(fileName).dir().path());
         return true;
     }
     return false;

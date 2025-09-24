@@ -13,9 +13,6 @@
 #include <QJsonParseError>
 #include <QSettings>
 #include <QApplication>
-#include <QScreen>
-#include <QDir>
-#include <QFileInfo>
 
 class Utils
 {
