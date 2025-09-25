@@ -560,7 +560,7 @@ void Canvas::mousePressEvent(QMouseEvent *event)
             m_isSelectedOp = true;
         }
     }
-    else
+    if(!m_currDrawingItem)
     {
         m_lastCanvasPixmap = m_canvasPixmap;
     }
