@@ -21,3 +21,14 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 
 RC_FILE = $$PWD/icon.rc
+
+CONFIG += debug_and_release
+CONFIG(debug, debug|release):
+{
+TARGET = Drawing_d                                  #指定生成的应用程序名
+DESTDIR = ../bin/x64/debug                            #指定生成的应用程序放置的目录
+}
+CONFIG(release, debug|release):{
+TARGET = Drawing                                    #指定生成的应用程序名
+DESTDIR = ../bin/x64/release/Drawing          #指定生成的应用程序放置的目录
+}
